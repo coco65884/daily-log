@@ -30,6 +30,8 @@ struct ActivityService {
         try context.save()
         notifier.scheduleReminder(for: activity)
         publishSnapshot(for: activity)
+        Task { await LiveActivityController.shared.endAll() }
+        LiveActivityController.shared.start(template: template, startAt: now)
         return activity
     }
 
@@ -42,6 +44,7 @@ struct ActivityService {
         }
         if !closed.isEmpty {
             publishSnapshot(for: nil)
+            Task { await LiveActivityController.shared.endAll() }
         }
         return closed.first
     }
