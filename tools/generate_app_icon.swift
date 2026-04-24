@@ -116,8 +116,8 @@ for layer in layers {
 
     // --- Clock (upper area) ---
     let clockCenterY: CGFloat = size * 0.15
-    let clockRadius: CGFloat = size * 0.085
-    let clockStroke: CGFloat = size * 0.018
+    let clockRadius: CGFloat = size * 0.110
+    let clockStroke: CGFloat = size * 0.028
 
     ctx.setLineWidth(clockStroke)
     ctx.strokeEllipse(in: CGRect(
@@ -148,7 +148,7 @@ for layer in layers {
     let topLineY: CGFloat = -size * 0.04
     let leftX: CGFloat = -pageWidth * 0.33
 
-    ctx.setLineWidth(size * 0.025)
+    ctx.setLineWidth(size * 0.033)
     for (index, width) in lineWidths.enumerated() {
         let yPos = topLineY - CGFloat(index) * lineSpacing
         ctx.move(to: CGPoint(x: leftX, y: yPos))
