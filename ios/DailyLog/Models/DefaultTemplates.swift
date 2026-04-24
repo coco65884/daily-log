@@ -16,6 +16,6 @@ enum DefaultTemplates {
         Preset(name: "運動", iconName: "figure.run", colorHex: "#E95E77", reminderMinutes: nil),
         Preset(name: "移動", iconName: "tram.fill", colorHex: "#7F8C8D", reminderMinutes: nil),
         Preset(name: "休憩", iconName: "cup.and.saucer.fill", colorHex: "#BFAE82", reminderMinutes: nil),
-        Preset(name: "趣味", iconName: "gamecontroller.fill", colorHex: "#9B59B6", reminderMinutes: nil)
+        Preset(name: "趣味", iconName: "gamecontroller.fill", colorHex: "#9B59B6", reminderMinutes: nil),
     ]
 }

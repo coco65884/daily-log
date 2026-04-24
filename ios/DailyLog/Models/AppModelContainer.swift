@@ -6,7 +6,7 @@ enum AppModelContainer {
         ActivityTemplate.self,
         Activity.self,
         Meal.self,
-        AppSettings.self
+        AppSettings.self,
     ])
 
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
