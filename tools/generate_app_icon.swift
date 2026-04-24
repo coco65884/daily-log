@@ -2,14 +2,14 @@
 // 使い方: swift tools/generate_app_icon.swift
 // 出力先: ios/DailyLog/Assets.xcassets/AppIcon.appiconset/icon-1024.png
 //
-// 水色のグラデ背景 + 白の時計モチーフ (アプリが行動時間記録なので時計で統一)。
-// ベースカラーはユーザー指定の「水色と白」。
+// 水色グラデ + 白い角丸ページ 3 枚を少しずつ傾けて重ねたスタック。
+// 最前面にメモの横線を 3 本入れて「ログ/ジャーナル」感を出す。
 
 import AppKit
 import CoreGraphics
 import Foundation
 
-// MARK: - Output image (exact 1024x1024 pixels, no HiDPI scaling)
+// MARK: - Canvas (exact 1024×1024 pixels)
 
 let sizeInt = 1024
 let size = CGFloat(sizeInt)
@@ -57,81 +57,76 @@ ctx.drawLinearGradient(
     options: []
 )
 
-// MARK: - Clock face
+// MARK: - Page stack
 
-let white = NSColor.white.cgColor
-let radius = size * 0.32
-let strokeWidth = size * 0.045
-
-// outer ring
-ctx.setStrokeColor(white)
-ctx.setLineWidth(strokeWidth)
-ctx.strokeEllipse(in: CGRect(
-    x: center.x - radius,
-    y: center.y - radius,
-    width: radius * 2,
-    height: radius * 2
-))
-
-// hour tick marks at 12 / 3 / 6 / 9
-let tickLen = size * 0.035
-let tickThickness = size * 0.025
-ctx.setLineCap(.round)
-for quarter in 0 ..< 4 {
-    let angle = CGFloat.pi / 2 * CGFloat(quarter) - CGFloat.pi / 2
-    let outer = CGPoint(
-        x: center.x + cos(angle) * radius,
-        y: center.y + sin(angle) * radius
-    )
-    let inner = CGPoint(
-        x: center.x + cos(angle) * (radius - tickLen),
-        y: center.y + sin(angle) * (radius - tickLen)
-    )
-    ctx.setStrokeColor(white)
-    ctx.setLineWidth(tickThickness)
-    ctx.move(to: outer)
-    ctx.addLine(to: inner)
-    ctx.strokePath()
+struct PageLayer {
+    let rotationDegrees: CGFloat
+    let fill: CGColor
+    let showLines: Bool
 }
 
-// MARK: - Clock hands
+// sky-100 / sky-50 / white で奥のページほどわずかに青みを帯びさせて段差を可視化。
+let backColor = NSColor(red: 224 / 255, green: 242 / 255, blue: 254 / 255, alpha: 1.0).cgColor
+let middleColor = NSColor(red: 240 / 255, green: 249 / 255, blue: 255 / 255, alpha: 1.0).cgColor
+let frontColor = NSColor.white.cgColor
 
-// NSBitmapImageRep の座標系は Y が上 (Cocoa 標準) なので
-// 12 時方向は sin が正になる `π/2 - 2π·(h/12)` で表現する。
-// hour hand pointing to 10
-let hourAngle = CGFloat.pi / 2 - CGFloat.pi * 2 * (10.0 / 12.0)
-let hourLen = radius * 0.52
-ctx.setStrokeColor(white)
-ctx.setLineWidth(size * 0.05)
-ctx.setLineCap(.round)
-ctx.move(to: center)
-ctx.addLine(to: CGPoint(
-    x: center.x + cos(hourAngle) * hourLen,
-    y: center.y + sin(hourAngle) * hourLen
-))
-ctx.strokePath()
+let layers: [PageLayer] = [
+    PageLayer(rotationDegrees: 10, fill: backColor, showLines: false),
+    PageLayer(rotationDegrees: -5, fill: middleColor, showLines: false),
+    PageLayer(rotationDegrees: 0, fill: frontColor, showLines: true),
+]
 
-// minute hand pointing to 2
-let minuteAngle = CGFloat.pi / 2 - CGFloat.pi * 2 * (2.0 / 12.0)
-let minuteLen = radius * 0.78
-ctx.setStrokeColor(white)
-ctx.setLineWidth(size * 0.045)
-ctx.move(to: center)
-ctx.addLine(to: CGPoint(
-    x: center.x + cos(minuteAngle) * minuteLen,
-    y: center.y + sin(minuteAngle) * minuteLen
-))
-ctx.strokePath()
+let pageWidth = size * 0.58
+let pageHeight = size * 0.70
+let cornerRadius = size * 0.05
 
-// center pivot
-ctx.setFillColor(white)
-let pivot = size * 0.025
-ctx.fillEllipse(in: CGRect(
-    x: center.x - pivot,
-    y: center.y - pivot,
-    width: pivot * 2,
-    height: pivot * 2
-))
+for layer in layers {
+    ctx.saveGState()
+    ctx.translateBy(x: center.x, y: center.y)
+    ctx.rotate(by: layer.rotationDegrees * .pi / 180)
+
+    let rect = CGRect(
+        x: -pageWidth / 2,
+        y: -pageHeight / 2,
+        width: pageWidth,
+        height: pageHeight
+    )
+    let path = CGPath(
+        roundedRect: rect,
+        cornerWidth: cornerRadius,
+        cornerHeight: cornerRadius,
+        transform: nil
+    )
+    ctx.addPath(path)
+    ctx.setFillColor(layer.fill)
+    ctx.fillPath()
+
+    if layer.showLines {
+        // 3 本の短い水色線。上から下に並べてメモを暗示。
+        ctx.setStrokeColor(
+            NSColor(red: 125 / 255, green: 211 / 255, blue: 252 / 255, alpha: 1.0).cgColor
+        )
+        ctx.setLineWidth(size * 0.025)
+        ctx.setLineCap(.round)
+
+        // 行の長さバリエーションで「記入済みのメモ」感
+        let lineWidths: [CGFloat] = [pageWidth * 0.58, pageWidth * 0.66, pageWidth * 0.42]
+        // ページ中央に 3 本を等間隔で配置
+        let lineSpacing = size * 0.09
+        let verticalSpan = lineSpacing * CGFloat(lineWidths.count - 1)
+        let topY = verticalSpan / 2
+        let leftX = -pageWidth * 0.33
+
+        for (index, width) in lineWidths.enumerated() {
+            let yPos = topY - CGFloat(index) * lineSpacing
+            ctx.move(to: CGPoint(x: leftX, y: yPos))
+            ctx.addLine(to: CGPoint(x: leftX + width, y: yPos))
+            ctx.strokePath()
+        }
+    }
+
+    ctx.restoreGState()
+}
 
 NSGraphicsContext.restoreGraphicsState()
 
