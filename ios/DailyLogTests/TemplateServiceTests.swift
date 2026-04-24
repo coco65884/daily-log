@@ -46,17 +46,16 @@ final class TemplateServiceTests: XCTestCase {
     }
 
     func testReorderUpdatesSortOrder() throws {
-        let a = try service.create(name: "A")
-        let b = try service.create(name: "B")
-        let c = try service.create(name: "C")
+        let first = try service.create(name: "A")
+        let second = try service.create(name: "B")
+        let third = try service.create(name: "C")
         let siblings = try service.siblings(of: nil)
 
-        // Move last element to front
         try service.reorder(siblings: siblings, from: IndexSet(integer: 2), to: 0)
 
-        XCTAssertEqual(c.sortOrder, 0)
-        XCTAssertEqual(a.sortOrder, 1)
-        XCTAssertEqual(b.sortOrder, 2)
+        XCTAssertEqual(third.sortOrder, 0)
+        XCTAssertEqual(first.sortOrder, 1)
+        XCTAssertEqual(second.sortOrder, 2)
 
         let reloaded = try service.siblings(of: nil)
         XCTAssertEqual(reloaded.map(\.name), ["C", "A", "B"])
