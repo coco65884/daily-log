@@ -71,6 +71,7 @@ jobs:
       # `xcodebuild test` は build を含むので build ステップは不要。
       # -skipMacroValidation / -skipPackagePluginValidation で対話プロンプトを回避。
       # -parallel-testing-enabled NO: テストスイートが小さいため直列の方が速い。
+      # COMPILER_INDEX_STORE_ENABLE=NO: IDE 補助用 index を CI では生成せず高速化。
       - name: Build & Test
         run: |
           set -o pipefail
@@ -82,4 +83,5 @@ jobs:
             -skipMacroValidation \
             -skipPackagePluginValidation \
             -parallel-testing-enabled NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             test
