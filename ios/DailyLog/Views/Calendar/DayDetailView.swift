@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 /// カレンダーから日付をタップしたときに開く 1 日の詳細画面。
-/// 円グラフは #16 で本実装する (ここでは一覧表示のみ)。
+/// 円グラフ + 記録リストで構成。
 struct DayDetailView: View {
     let date: Date
 
@@ -13,11 +13,20 @@ struct DayDetailView: View {
         ActivityDateExtractor.activities(on: date, from: allActivities)
     }
 
+    private var slices: [DayActivitySummary.Slice] {
+        DayActivitySummary.slices(for: allActivities, on: date)
+    }
+
     var body: some View {
         List {
             Section("サマリー") {
                 LabeledContent("記録数", value: "\(activities.count)")
                 LabeledContent("合計時間", value: totalDurationText)
+            }
+
+            Section("内訳") {
+                DayPieChart(slices: slices)
+                    .padding(.vertical, 8)
             }
 
             Section("記録") {
@@ -29,12 +38,6 @@ struct DayDetailView: View {
                         DayActivityRow(activity: activity)
                     }
                 }
-            }
-
-            Section {
-                Text("円グラフは今後 Issue #16 で実装予定")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle(titleText)
