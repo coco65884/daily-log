@@ -8,7 +8,9 @@ struct StatsView: View {
                     NavigationLink("週 24 時間チャート") {
                         WeekChartView()
                     }
-                    // #16 日別円グラフ / #17 週月統計 は追って追加
+                    NavigationLink("週/月サマリー") {
+                        PeriodStatsView()
+                    }
                 }
             }
             .navigationTitle("統計")
