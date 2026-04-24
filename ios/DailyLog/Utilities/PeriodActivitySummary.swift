@@ -8,7 +8,9 @@ enum PeriodActivitySummary {
         case week
         case month
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var displayName: String {
             switch self {
