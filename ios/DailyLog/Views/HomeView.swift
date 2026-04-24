@@ -2,6 +2,8 @@ import SwiftData
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(\.modelContext) private var modelContext
+
     @Query(
         filter: #Predicate<Activity> { $0.endAt == nil },
         sort: \Activity.startAt,
@@ -15,8 +17,14 @@ struct HomeView: View {
     )
     private var rootTemplates: [ActivityTemplate]
 
+    @State private var errorMessage: String?
+
     private var currentActivity: Activity? {
         inProgressActivities.first
+    }
+
+    private var service: ActivityService {
+        ActivityService(context: modelContext)
     }
 
     var body: some View {
@@ -39,17 +47,34 @@ struct HomeView: View {
                 .padding(.top)
             }
             .navigationTitle("DailyLog")
+            .alert(
+                "エラー",
+                isPresented: Binding(
+                    get: { errorMessage != nil },
+                    set: { if !$0 { errorMessage = nil } }
+                ),
+                presenting: errorMessage
+            ) { _ in
+                Button("OK", role: .cancel) { errorMessage = nil }
+            } message: { message in
+                Text(message)
+            }
         }
     }
 
-    // MARK: - Placeholder handlers (wired up in #7)
-
     private func stopCurrent() {
-        // #7 で実装
+        do {
+            try service.stopCurrent()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func start(with template: ActivityTemplate) {
-        // #7 で実装
-        _ = template
+        do {
+            try service.start(template: template)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
