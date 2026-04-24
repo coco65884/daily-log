@@ -13,11 +13,6 @@ build: generate
 		-scheme $(SCHEME) \
 		-destination '$(DESTINATION)' \
 		-configuration Debug \
-		build | xcbeautify || xcodebuild \
-		-project $(PROJECT) \
-		-scheme $(SCHEME) \
-		-destination '$(DESTINATION)' \
-		-configuration Debug \
 		build
 
 test: generate
