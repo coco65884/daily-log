@@ -13,9 +13,11 @@ struct ActivityService {
     private let context: ModelContext
     private let notifier: any ActivityNotifier
 
-    init(context: ModelContext, notifier: any ActivityNotifier = LocalNotificationNotifier.shared) {
+    init(context: ModelContext, notifier: (any ActivityNotifier)? = nil) {
         self.context = context
-        self.notifier = notifier
+        // @MainActor singleton を default parameter にすると non-isolated 文脈の警告が出るため
+        // init 本体 (この struct 自体 MainActor) で参照する。
+        self.notifier = notifier ?? LocalNotificationNotifier.shared
     }
 
     /// 既存の進行中があれば停止し、指定テンプレートで新しい Activity を開始する。
