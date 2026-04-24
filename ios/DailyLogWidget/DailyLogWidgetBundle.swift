@@ -5,5 +5,6 @@ import WidgetKit
 struct DailyLogWidgetBundle: WidgetBundle {
     var body: some Widget {
         DailyLogWidget()
+        DailyLogLiveActivity()
     }
 }
