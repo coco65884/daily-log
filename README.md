@@ -27,6 +27,19 @@ Xcode 15 以上を App Store からインストール後、
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
+### 署名設定 (実機ビルド前)
+
+個人の Apple Developer Team ID は `ios/Signing.local.xcconfig` (gitignored) で管理する。`make generate` で Xcode プロジェクトを再生成しても Team が消えないようにするため。
+
+```bash
+cp ios/Signing.local.xcconfig.example ios/Signing.local.xcconfig
+# Signing.local.xcconfig を開き DEVELOPMENT_TEAM に自分の Team ID を設定
+```
+
+Team ID は Xcode の **TARGETS > Signing & Capabilities > Team** プルダウン、もしくは https://developer.apple.com/account/#/membership で確認できる。
+
+シミュレータ実行のみなら省略可能 (未設定なら ad-hoc 署名で動作する)。
+
 ### Xcode プロジェクトの生成
 
 `.xcodeproj` は追跡外なのでクローン直後に生成する。

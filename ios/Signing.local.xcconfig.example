@@ -1,0 +1,8 @@
+// このファイルを `Signing.local.xcconfig` にコピーして自分の Team ID を設定する。
+// Signing.local.xcconfig は .gitignore 対象なので個人情報はコミットされない。
+//
+// Team ID (10 文字) の確認方法:
+//   - Xcode: TARGETS > Signing & Capabilities > Team ドロップダウン
+//   - Web:   https://developer.apple.com/account/#/membership
+
+DEVELOPMENT_TEAM = XXXXXXXXXX

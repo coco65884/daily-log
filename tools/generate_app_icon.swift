@@ -2,8 +2,9 @@
 // 使い方: swift tools/generate_app_icon.swift
 // 出力先: ios/DailyLog/Assets.xcassets/AppIcon.appiconset/icon-1024.png
 //
-// 水色グラデ + 白い角丸ページ 3 枚を少しずつ傾けて重ねたスタック。
-// 最前面にメモの横線を 3 本入れて「ログ/ジャーナル」感を出す。
+// 水色グラデ + 白い角丸ページ 3 枚を重ねたスタック。
+// 最前面ページには上部に水色の時計、下部に水色の横線 3 本を配置。
+// 「時間を記録するジャーナル」のメタファ。
 
 import AppKit
 import CoreGraphics
@@ -62,18 +63,19 @@ ctx.drawLinearGradient(
 struct PageLayer {
     let rotationDegrees: CGFloat
     let fill: CGColor
-    let showLines: Bool
+    let drawContent: Bool
 }
 
 // sky-100 / sky-50 / white で奥のページほどわずかに青みを帯びさせて段差を可視化。
 let backColor = NSColor(red: 224 / 255, green: 242 / 255, blue: 254 / 255, alpha: 1.0).cgColor
 let middleColor = NSColor(red: 240 / 255, green: 249 / 255, blue: 255 / 255, alpha: 1.0).cgColor
 let frontColor = NSColor.white.cgColor
+let accentColor = NSColor(red: 125 / 255, green: 211 / 255, blue: 252 / 255, alpha: 1.0).cgColor // sky-300
 
 let layers: [PageLayer] = [
-    PageLayer(rotationDegrees: 10, fill: backColor, showLines: false),
-    PageLayer(rotationDegrees: -5, fill: middleColor, showLines: false),
-    PageLayer(rotationDegrees: 0, fill: frontColor, showLines: true),
+    PageLayer(rotationDegrees: 10, fill: backColor, drawContent: false),
+    PageLayer(rotationDegrees: -5, fill: middleColor, drawContent: false),
+    PageLayer(rotationDegrees: 0, fill: frontColor, drawContent: true),
 ]
 
 let pageWidth = size * 0.58
@@ -101,28 +103,57 @@ for layer in layers {
     ctx.setFillColor(layer.fill)
     ctx.fillPath()
 
-    if layer.showLines {
-        // 3 本の短い水色線。上から下に並べてメモを暗示。
-        ctx.setStrokeColor(
-            NSColor(red: 125 / 255, green: 211 / 255, blue: 252 / 255, alpha: 1.0).cgColor
-        )
-        ctx.setLineWidth(size * 0.025)
-        ctx.setLineCap(.round)
+    guard layer.drawContent else {
+        ctx.restoreGState()
+        continue
+    }
 
-        // 行の長さバリエーションで「記入済みのメモ」感
-        let lineWidths: [CGFloat] = [pageWidth * 0.58, pageWidth * 0.66, pageWidth * 0.42]
-        // ページ中央に 3 本を等間隔で配置
-        let lineSpacing = size * 0.09
-        let verticalSpan = lineSpacing * CGFloat(lineWidths.count - 1)
-        let topY = verticalSpan / 2
-        let leftX = -pageWidth * 0.33
+    // MARK: Front-page content — clock (top) + lines (bottom)
+    // ページ座標は canvas center が原点、Cocoa 規約で +y が視覚的な上。
 
-        for (index, width) in lineWidths.enumerated() {
-            let yPos = topY - CGFloat(index) * lineSpacing
-            ctx.move(to: CGPoint(x: leftX, y: yPos))
-            ctx.addLine(to: CGPoint(x: leftX + width, y: yPos))
-            ctx.strokePath()
-        }
+    ctx.setStrokeColor(accentColor)
+    ctx.setLineCap(.round)
+
+    // --- Clock (upper area) ---
+    let clockCenterY: CGFloat = size * 0.15
+    let clockRadius: CGFloat = size * 0.085
+    let clockStroke: CGFloat = size * 0.018
+
+    ctx.setLineWidth(clockStroke)
+    ctx.strokeEllipse(in: CGRect(
+        x: -clockRadius,
+        y: clockCenterY - clockRadius,
+        width: clockRadius * 2,
+        height: clockRadius * 2
+    ))
+
+    // 針は NSBitmapImageRep の Y-up 座標系前提の `π/2 - 2π·(h/12)` で表現。
+    func drawHand(pointingAt hour: CGFloat, length: CGFloat, width: CGFloat) {
+        let angle = CGFloat.pi / 2 - CGFloat.pi * 2 * (hour / 12.0)
+        ctx.setLineWidth(width)
+        ctx.move(to: CGPoint(x: 0, y: clockCenterY))
+        ctx.addLine(to: CGPoint(
+            x: cos(angle) * length,
+            y: clockCenterY + sin(angle) * length
+        ))
+        ctx.strokePath()
+    }
+    drawHand(pointingAt: 10, length: clockRadius * 0.55, width: clockStroke * 1.1)
+    drawHand(pointingAt: 2, length: clockRadius * 0.78, width: clockStroke)
+
+    // --- Lines (lower area) ---
+    // 先頭 (一番上の線) はページ中央より少し下、以降下向きに 3 本。
+    let lineWidths: [CGFloat] = [pageWidth * 0.60, pageWidth * 0.66, pageWidth * 0.45]
+    let lineSpacing: CGFloat = size * 0.080
+    let topLineY: CGFloat = -size * 0.04
+    let leftX: CGFloat = -pageWidth * 0.33
+
+    ctx.setLineWidth(size * 0.025)
+    for (index, width) in lineWidths.enumerated() {
+        let yPos = topLineY - CGFloat(index) * lineSpacing
+        ctx.move(to: CGPoint(x: leftX, y: yPos))
+        ctx.addLine(to: CGPoint(x: leftX + width, y: yPos))
+        ctx.strokePath()
     }
 
     ctx.restoreGState()
