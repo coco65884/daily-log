@@ -12,6 +12,11 @@ struct MainTabView: View {
                 .tabItem {
                     Label("カレンダー", systemImage: "calendar")
                 }
+
+            StatsView()
+                .tabItem {
+                    Label("統計", systemImage: "chart.bar")
+                }
         }
     }
 }
