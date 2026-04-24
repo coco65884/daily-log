@@ -3,6 +3,7 @@ import SwiftUI
 struct TemplateGrid: View {
     let templates: [ActivityTemplate]
     let onTap: (ActivityTemplate) -> Void
+    var onLongPress: ((ActivityTemplate) -> Void)?
 
     private let columns = [
         GridItem(.adaptive(minimum: 88), spacing: 12),
@@ -14,9 +15,13 @@ struct TemplateGrid: View {
         } else {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(templates) { template in
-                    TemplateButton(template: template) {
-                        onTap(template)
-                    }
+                    TemplateButton(
+                        template: template,
+                        action: { onTap(template) },
+                        onLongPress: onLongPress.map { handler in
+                            { handler(template) }
+                        }
+                    )
                 }
             }
         }

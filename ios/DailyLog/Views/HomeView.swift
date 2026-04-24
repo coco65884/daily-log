@@ -19,6 +19,7 @@ struct HomeView: View {
 
     @State private var errorMessage: String?
     @State private var isPresentingTemplates = false
+    @State private var childrenParent: ActivityTemplate?
 
     private var currentActivity: Activity? {
         inProgressActivities.first
@@ -39,7 +40,14 @@ struct HomeView: View {
 
                     TemplateGrid(
                         templates: rootTemplates,
-                        onTap: { start(with: $0) }
+                        onTap: { start(with: $0) },
+                        onLongPress: { template in
+                            if template.children.isEmpty {
+                                start(with: template)
+                            } else {
+                                childrenParent = template
+                            }
+                        }
                     )
 
                     Spacer(minLength: 0)
@@ -60,6 +68,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $isPresentingTemplates) {
                 TemplateListView()
+            }
+            .sheet(item: $childrenParent) { parent in
+                ChildTemplateSheet(parent: parent) { selected in
+                    start(with: selected)
+                }
             }
             .alert(
                 "エラー",
