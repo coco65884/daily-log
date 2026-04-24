@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint / Format
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install swiftlint swiftformat
+
+      - name: SwiftFormat (lint)
+        run: swiftformat --lint --config .swiftformat ios
+
+      - name: SwiftLint (strict)
+        run: swiftlint --strict --config .swiftlint.yml
+
+  test:
+    name: Build & Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: make -C ios generate
+
+      - name: Resolve iOS Simulator destination
+        id: sim
+        run: |
+          # 最新の iPhone シミュレータを 1 台選ぶ。新 Xcode でも古い Xcode でも動くよう
+          # `xcrun simctl list devices available` から最初の iPhone 行を拾う。
+          DEVICE=$(xcrun simctl list devices available | \
+            awk -F'[()]' '/-- iOS/{flag=1; next} /^--/{flag=0} flag && /iPhone/ {print $0; exit}' | \
+            sed -E 's/^ *([^(]+) .*/\1/' | \
+            sed -E 's/[[:space:]]+$//')
+          if [ -z "$DEVICE" ]; then
+            echo "::error::No iPhone simulator available"
+            exit 1
+          fi
+          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $DEVICE"
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/DailyLog.xcodeproj \
+            -scheme DailyLog \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }},OS=latest" \
+            -configuration Debug \
+            build
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/DailyLog.xcodeproj \
+            -scheme DailyLog \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }},OS=latest" \
+            test
