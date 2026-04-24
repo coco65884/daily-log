@@ -17,11 +17,12 @@ final class ActivityDateExtractorTests: XCTestCase {
 
         let result = ActivityDateExtractor.extractDateComponents(from: activities, calendar: calendar)
 
-        let expected: Set<DateComponents> = [
-            DateComponents(year: 2026, month: 4, day: 25),
-            DateComponents(year: 2026, month: 4, day: 26),
-        ]
-        XCTAssertEqual(result, expected)
+        // Calendar.dateComponents(_:from:) can populate extra fields (e.g. isLeapMonth)
+        // that vary between SDK versions, so compare only the identity triple.
+        let keys = Set(result.map { components -> String in
+            "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
+        })
+        XCTAssertEqual(keys, Set(["2026-4-25", "2026-4-26"]))
     }
 
     func testFiltersActivitiesByCalendarDay() {
