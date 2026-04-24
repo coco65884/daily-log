@@ -4,7 +4,7 @@ import SwiftData
 @Model
 final class Meal {
     var id: UUID = UUID()
-    var photoFilename: String?
+    var photoFilenames: [String] = []
     var shopName: String?
     var shopAddress: String?
     var note: String = ""
@@ -15,7 +15,7 @@ final class Meal {
     init(
         id: UUID = UUID(),
         activity: Activity? = nil,
-        photoFilename: String? = nil,
+        photoFilenames: [String] = [],
         shopName: String? = nil,
         shopAddress: String? = nil,
         note: String = "",
@@ -23,7 +23,7 @@ final class Meal {
     ) {
         self.id = id
         self.activity = activity
-        self.photoFilename = photoFilename
+        self.photoFilenames = photoFilenames
         self.shopName = shopName
         self.shopAddress = shopAddress
         self.note = note
