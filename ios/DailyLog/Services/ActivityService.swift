@@ -1,11 +1,13 @@
 import Foundation
 import SwiftData
+import WidgetKit
 
 /// 行動の開始/停止ロジック。
 ///
 /// **不変条件**: 進行中の `Activity` (`endAt == nil`) は常に高々 1 件。
 /// `start` は既存の進行中を全て停止してから新規作成する。
 /// 忘れアラートのスケジュール/キャンセルを `ActivityNotifier` 経由で発火する。
+/// 進行中スナップショットを App Group に書き込み、ウィジェットを再読み込みさせる。
 @MainActor
 struct ActivityService {
     private let context: ModelContext
@@ -27,6 +29,7 @@ struct ActivityService {
         context.insert(activity)
         try context.save()
         notifier.scheduleReminder(for: activity)
+        publishSnapshot(for: activity)
         return activity
     }
 
@@ -36,6 +39,9 @@ struct ActivityService {
         let closed = try stopAllInProgress(at: now)
         for activity in closed {
             notifier.cancelReminder(for: activity)
+        }
+        if !closed.isEmpty {
+            publishSnapshot(for: nil)
         }
         return closed.first
     }
@@ -57,5 +63,20 @@ struct ActivityService {
         }
         try context.save()
         return inProgress
+    }
+
+    private func publishSnapshot(for activity: Activity?) {
+        let snapshot: CurrentActivitySnapshot? = activity.flatMap { act in
+            guard let template = act.template else { return nil }
+            return CurrentActivitySnapshot(
+                templateName: template.name,
+                iconName: template.iconName,
+                colorHex: template.colorHex,
+                startAt: act.startAt,
+                isMealType: template.isMealType
+            )
+        }
+        CurrentActivitySnapshot.store(snapshot)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
