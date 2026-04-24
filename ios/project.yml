@@ -23,6 +23,7 @@ targets:
     platform: iOS
     sources:
       - path: DailyLog
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.coco.daily-log
@@ -59,6 +60,7 @@ targets:
     platform: iOS
     sources:
       - path: DailyLogWidget
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.coco.daily-log.widget
