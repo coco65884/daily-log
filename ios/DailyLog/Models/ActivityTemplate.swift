@@ -9,6 +9,7 @@ final class ActivityTemplate {
     var colorHex: String = "#4A90E2"
     var sortOrder: Int = 0
     var reminderMinutes: Int?
+    var isMealType: Bool = false
     var createdAt: Date = Date()
 
     var parent: ActivityTemplate?
@@ -26,6 +27,7 @@ final class ActivityTemplate {
         colorHex: String = "#4A90E2",
         sortOrder: Int = 0,
         reminderMinutes: Int? = nil,
+        isMealType: Bool = false,
         parent: ActivityTemplate? = nil,
         createdAt: Date = Date()
     ) {
@@ -35,6 +37,7 @@ final class ActivityTemplate {
         self.colorHex = colorHex
         self.sortOrder = sortOrder
         self.reminderMinutes = reminderMinutes
+        self.isMealType = isMealType
         self.parent = parent
         self.createdAt = createdAt
     }

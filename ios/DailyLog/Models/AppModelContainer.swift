@@ -32,7 +32,8 @@ enum AppModelContainer {
                     iconName: preset.iconName,
                     colorHex: preset.colorHex,
                     sortOrder: index,
-                    reminderMinutes: preset.reminderMinutes
+                    reminderMinutes: preset.reminderMinutes,
+                    isMealType: preset.isMealType
                 )
                 context.insert(template)
             }

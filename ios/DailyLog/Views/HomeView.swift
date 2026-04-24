@@ -18,6 +18,7 @@ struct HomeView: View {
     private var rootTemplates: [ActivityTemplate]
 
     @State private var errorMessage: String?
+    @State private var isPresentingTemplates = false
 
     private var currentActivity: Activity? {
         inProgressActivities.first
@@ -47,6 +48,19 @@ struct HomeView: View {
                 .padding(.top)
             }
             .navigationTitle("DailyLog")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isPresentingTemplates = true
+                    } label: {
+                        Image(systemName: "square.grid.2x2")
+                    }
+                    .accessibilityLabel("テンプレート管理")
+                }
+            }
+            .sheet(isPresented: $isPresentingTemplates) {
+                TemplateListView()
+            }
             .alert(
                 "エラー",
                 isPresented: Binding(
