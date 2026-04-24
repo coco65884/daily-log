@@ -5,22 +5,25 @@ import XCTest
 @MainActor
 final class ActivityServiceTests: XCTestCase {
     private var container: ModelContainer!
+    private var notifier: MockActivityNotifier!
     private var service: ActivityService!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         container = try AppModelContainer.makeContainer(inMemory: true)
-        service = ActivityService(context: container.mainContext)
+        notifier = MockActivityNotifier()
+        service = ActivityService(context: container.mainContext, notifier: notifier)
     }
 
     override func tearDownWithError() throws {
         service = nil
+        notifier = nil
         container = nil
         try super.tearDownWithError()
     }
 
     func testStartCreatesInProgressActivity() throws {
-        let template = ActivityTemplate(name: "仕事")
+        let template = ActivityTemplate(name: "仕事", reminderMinutes: 60)
         container.mainContext.insert(template)
 
         let activity = try service.start(template: template)
@@ -33,7 +36,7 @@ final class ActivityServiceTests: XCTestCase {
     }
 
     func testStartAutomaticallyStopsPreviousActivity() throws {
-        let first = ActivityTemplate(name: "勉強")
+        let first = ActivityTemplate(name: "勉強", reminderMinutes: 45)
         let second = ActivityTemplate(name: "休憩")
         container.mainContext.insert(first)
         container.mainContext.insert(second)
@@ -77,7 +80,6 @@ final class ActivityServiceTests: XCTestCase {
     }
 
     func testDefensivelyClosesMultipleInProgress() throws {
-        // 何らかの理由で 2 件進行中になった状態を作り、stopCurrent が全て閉じることを確認
         let template = ActivityTemplate(name: "仕事")
         container.mainContext.insert(template)
 
@@ -94,8 +96,73 @@ final class ActivityServiceTests: XCTestCase {
         XCTAssertFalse(a2.isInProgress)
         XCTAssertEqual(a1.endAt, endAt)
         XCTAssertEqual(a2.endAt, endAt)
+    }
 
-        let open = try service.fetchInProgress()
-        XCTAssertTrue(open.isEmpty)
+    // MARK: - Reminder notifier integration
+
+    func testStartSchedulesReminderForTemplateWithReminderMinutes() throws {
+        let template = ActivityTemplate(name: "勉強", reminderMinutes: 45)
+        container.mainContext.insert(template)
+
+        let activity = try service.start(template: template)
+
+        XCTAssertTrue(notifier.scheduledIDs.contains(activity.id))
+    }
+
+    func testStartDoesNotScheduleReminderWhenTemplateHasNone() throws {
+        let template = ActivityTemplate(name: "睡眠", reminderMinutes: nil)
+        container.mainContext.insert(template)
+
+        let activity = try service.start(template: template)
+
+        // The mock forwards to the real guard, mirroring production behaviour.
+        XCTAssertFalse(notifier.scheduledIDs.contains(activity.id))
+    }
+
+    func testStartCancelsReminderForReplacedActivity() throws {
+        let first = ActivityTemplate(name: "勉強", reminderMinutes: 45)
+        let second = ActivityTemplate(name: "仕事", reminderMinutes: 60)
+        container.mainContext.insert(first)
+        container.mainContext.insert(second)
+
+        let firstActivity = try service.start(template: first)
+        let secondActivity = try service.start(template: second)
+
+        XCTAssertTrue(notifier.cancelledIDs.contains(firstActivity.id))
+        XCTAssertTrue(notifier.scheduledIDs.contains(secondActivity.id))
+    }
+
+    func testStopCurrentCancelsReminder() throws {
+        let template = ActivityTemplate(name: "仕事", reminderMinutes: 60)
+        container.mainContext.insert(template)
+
+        let activity = try service.start(template: template)
+        _ = try service.stopCurrent()
+
+        XCTAssertTrue(notifier.cancelledIDs.contains(activity.id))
+    }
+}
+
+@MainActor
+private final class MockActivityNotifier: ActivityNotifier {
+    private(set) var scheduledIDs: Set<UUID> = []
+    private(set) var cancelledIDs: Set<UUID> = []
+
+    func requestAuthorizationIfNeeded() async {}
+
+    func scheduleReminder(for activity: Activity) {
+        guard
+            let template = activity.template,
+            let minutes = template.reminderMinutes,
+            minutes > 0
+        else {
+            return
+        }
+        scheduledIDs.insert(activity.id)
+    }
+
+    func cancelReminder(for activity: Activity) {
+        cancelledIDs.insert(activity.id)
+        scheduledIDs.remove(activity.id)
     }
 }

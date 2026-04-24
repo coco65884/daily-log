@@ -56,6 +56,9 @@ struct HomeView: View {
                 .padding(.top)
             }
             .navigationTitle("DailyLog")
+            .task {
+                await LocalNotificationNotifier.shared.requestAuthorizationIfNeeded()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
