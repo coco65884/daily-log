@@ -5,6 +5,7 @@ struct InProgressCard: View {
     let onStop: () -> Void
 
     @State private var now: Date = .init()
+    @State private var isPresentingVoiceMemo = false
 
     private let timer = Timer
         .publish(every: 1, on: .main, in: .common)
@@ -25,10 +26,15 @@ struct InProgressCard: View {
                 .fill(Color(.secondarySystemBackground))
         )
         .onReceive(timer) { now = $0 }
+        .sheet(isPresented: $isPresentingVoiceMemo) {
+            if let activity {
+                VoiceMemoSheet(activity: activity)
+            }
+        }
     }
 
     private func activeContent(for activity: Activity) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             iconView(for: activity)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -41,16 +47,34 @@ struct InProgressCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            Button(role: .destructive, action: onStop) {
-                Label("停止", systemImage: "stop.fill")
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.borderedProminent)
+            micButton
+
+            stopButton
         }
+    }
+
+    private var micButton: some View {
+        Button {
+            isPresentingVoiceMemo = true
+        } label: {
+            Image(systemName: "mic")
+                .font(.title3)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel("音声メモ")
+    }
+
+    private var stopButton: some View {
+        Button(role: .destructive, action: onStop) {
+            Image(systemName: "stop.fill")
+                .font(.title3)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .accessibilityLabel("停止")
     }
 
     private var emptyContent: some View {
