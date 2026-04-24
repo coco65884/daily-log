@@ -15,7 +15,11 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     ENABLE_USER_SCRIPT_SANDBOXING: YES
-    SWIFT_STRICT_CONCURRENCY: complete
+    # SwiftData (@Model は class = 非 Sendable) に対する KeyPath の Sendable 警告が
+    # `complete` で大量に出るため minimal に緩和。Swift 6 本格移行時に再評価。
+    SWIFT_STRICT_CONCURRENCY: minimal
+    # Xcode 16+ の recommended settings を project.yml に反映して再生成後も維持。
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 
 packages:
   ZIPFoundation:
