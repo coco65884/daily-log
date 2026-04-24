@@ -5,10 +5,8 @@ import Foundation
 enum ActivityDateExtractor {
     static func extractDateComponents(
         from activities: [Activity],
-        calendar: Calendar = Calendar(identifier: .gregorian)
+        calendar: Calendar = .currentGregorian
     ) -> Set<DateComponents> {
-        var calendar = calendar
-        calendar.timeZone = .current
         let components = activities.map { activity in
             calendar.dateComponents([.year, .month, .day], from: activity.startAt)
         }
@@ -18,14 +16,21 @@ enum ActivityDateExtractor {
     static func activities(
         on day: Date,
         from activities: [Activity],
-        calendar: Calendar = Calendar(identifier: .gregorian)
+        calendar: Calendar = .currentGregorian
     ) -> [Activity] {
-        var calendar = calendar
-        calendar.timeZone = .current
         let target = calendar.dateComponents([.year, .month, .day], from: day)
         return activities.filter { activity in
             let candidate = calendar.dateComponents([.year, .month, .day], from: activity.startAt)
             return candidate == target
         }
+    }
+}
+
+extension Calendar {
+    /// 端末のタイムゾーンに従うグレゴリオ暦。ホーム/カレンダー表示で使う既定値。
+    static var currentGregorian: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
     }
 }
