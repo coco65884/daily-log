@@ -28,7 +28,9 @@ struct ActivityService {
         let activity = Activity(template: template, startAt: now)
         context.insert(activity)
         try context.save()
-        notifier.scheduleReminder(for: activity)
+        if AppPreferences.notificationsEnabled {
+            notifier.scheduleReminder(for: activity)
+        }
         publishSnapshot(for: activity)
         Task { await LiveActivityController.shared.endAll() }
         LiveActivityController.shared.start(template: template, startAt: now)

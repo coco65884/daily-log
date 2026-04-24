@@ -17,6 +17,11 @@ struct MainTabView: View {
                 .tabItem {
                     Label("統計", systemImage: "chart.bar")
                 }
+
+            SettingsView()
+                .tabItem {
+                    Label("設定", systemImage: "gear")
+                }
         }
     }
 }
