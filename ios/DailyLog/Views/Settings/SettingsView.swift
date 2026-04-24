@@ -12,6 +12,8 @@ struct SettingsView: View {
     @State private var isExporting = false
     @State private var exportArchive: ExportArchive?
     @State private var exportErrorMessage: String?
+    @State private var backupMessage: String?
+    @State private var isRunningBackup = false
 
     var body: some View {
         NavigationStack {
@@ -58,6 +60,18 @@ struct SettingsView: View {
             } message: { message in
                 Text(message)
             }
+            .alert(
+                "バックアップ",
+                isPresented: Binding(
+                    get: { backupMessage != nil },
+                    set: { if !$0 { backupMessage = nil } }
+                ),
+                presenting: backupMessage
+            ) { _ in
+                Button("OK", role: .cancel) { backupMessage = nil }
+            } message: { message in
+                Text(message)
+            }
         }
     }
 
@@ -78,6 +92,25 @@ struct SettingsView: View {
             try? FileManager.default.removeItem(at: archive.url)
             exportArchive = nil
         }
+    }
+
+    private func runManualBackup() {
+        guard let target = BackupService.iCloudBackupsDirectory() else {
+            backupMessage = "iCloud Drive が利用できません。iCloud にサインインして iCloud Drive を有効にしてください。"
+            return
+        }
+        isRunningBackup = true
+        let service = BackupService(
+            exporter: ExportService(context: modelContext),
+            targetDirectory: target
+        )
+        do {
+            let url = try service.performBackup()
+            backupMessage = "バックアップしました: \(url.lastPathComponent)"
+        } catch {
+            backupMessage = error.localizedDescription
+        }
+        isRunningBackup = false
     }
 
     private var syncSection: some View {
@@ -127,8 +160,19 @@ struct SettingsView: View {
 
             LabeledContent("インポート", value: "Issue #23 で実装")
                 .foregroundStyle(.secondary)
-            LabeledContent("iCloud Drive 自動バックアップ", value: "Issue #22 で実装")
-                .foregroundStyle(.secondary)
+
+            Button {
+                runManualBackup()
+            } label: {
+                HStack {
+                    Label("今すぐ iCloud バックアップ", systemImage: "icloud.and.arrow.up")
+                    if isRunningBackup {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(isRunningBackup)
         }
     }
 
