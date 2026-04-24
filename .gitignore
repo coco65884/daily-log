@@ -29,8 +29,8 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-# xcodegen 生成物 (project.yml から再生成可能なため追跡しない方針に倒す場合はコメント解除)
-# *.xcodeproj
+# xcodegen 生成物 (project.yml から再生成する方針。Clone 後は `make -C ios generate`)
+*.xcodeproj
 
 # Environment variables
 .env
