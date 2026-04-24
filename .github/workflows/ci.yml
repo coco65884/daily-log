@@ -17,8 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install tools
-        run: brew install swiftlint swiftformat
+      - name: Ensure SwiftLint / SwiftFormat
+        run: |
+          # macos-latest runner には SwiftLint が同梱されているが念のため確認。
+          command -v swiftlint >/dev/null || brew install --quiet swiftlint
+          command -v swiftformat >/dev/null || brew install --quiet swiftformat
 
       - name: SwiftFormat (lint)
         run: swiftformat --lint --config .swiftformat ios
@@ -35,17 +38,25 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: Install xcodegen
-        run: brew install xcodegen
+      - name: Ensure xcodegen
+        run: command -v xcodegen >/dev/null || brew install --quiet xcodegen
 
       - name: Generate Xcode project
         run: make -C ios generate
 
+      - name: Restore DerivedData cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          # Swift ソース変更のたびにキー変更、fallback で前 commit の cache を再利用
+          key: xcode-dd-${{ runner.os }}-${{ hashFiles('ios/project.yml') }}-${{ hashFiles('ios/**/*.swift') }}
+          restore-keys: |
+            xcode-dd-${{ runner.os }}-${{ hashFiles('ios/project.yml') }}-
+            xcode-dd-${{ runner.os }}-
+
       - name: Resolve iOS Simulator destination
         id: sim
         run: |
-          # 最新の iPhone シミュレータを 1 台選ぶ。新 Xcode でも古い Xcode でも動くよう
-          # `xcrun simctl list devices available` から最初の iPhone 行を拾う。
           DEVICE=$(xcrun simctl list devices available | \
             awk -F'[()]' '/-- iOS/{flag=1; next} /^--/{flag=0} flag && /iPhone/ {print $0; exit}' | \
             sed -E 's/^ *([^(]+) .*/\1/' | \
@@ -57,7 +68,11 @@ jobs:
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
           echo "Using simulator: $DEVICE"
 
-      - name: Build
+      # `xcodebuild test` は build を含むので build ステップは不要。
+      # -skipMacroValidation / -skipPackagePluginValidation で対話プロンプトを回避。
+      # -parallel-testing-enabled NO: テストスイートが小さいため直列の方が速い。
+      # COMPILER_INDEX_STORE_ENABLE=NO: IDE 補助用 index を CI では生成せず高速化。
+      - name: Build & Test
         run: |
           set -o pipefail
           xcodebuild \
@@ -65,13 +80,8 @@ jobs:
             -scheme DailyLog \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }},OS=latest" \
             -configuration Debug \
-            build
-
-      - name: Test
-        run: |
-          set -o pipefail
-          xcodebuild \
-            -project ios/DailyLog.xcodeproj \
-            -scheme DailyLog \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }},OS=latest" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -parallel-testing-enabled NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             test
