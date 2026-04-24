@@ -6,6 +6,7 @@ struct InProgressCard: View {
 
     @State private var now: Date = .init()
     @State private var isPresentingVoiceMemo = false
+    @State private var isPresentingMeal = false
 
     private let timer = Timer
         .publish(every: 1, on: .main, in: .common)
@@ -31,6 +32,11 @@ struct InProgressCard: View {
                 VoiceMemoSheet(activity: activity)
             }
         }
+        .sheet(isPresented: $isPresentingMeal) {
+            if let activity {
+                MealDetailView(activity: activity)
+            }
+        }
     }
 
     private func activeContent(for activity: Activity) -> some View {
@@ -49,10 +55,26 @@ struct InProgressCard: View {
 
             Spacer(minLength: 8)
 
+            if activity.template?.isMealType == true {
+                mealButton
+            }
+
             micButton
 
             stopButton
         }
+    }
+
+    private var mealButton: some View {
+        Button {
+            isPresentingMeal = true
+        } label: {
+            Image(systemName: "fork.knife")
+                .font(.title3)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel("食事の記録")
     }
 
     private var micButton: some View {
