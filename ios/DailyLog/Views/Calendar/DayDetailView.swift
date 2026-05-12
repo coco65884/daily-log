@@ -9,6 +9,24 @@ struct DayDetailView: View {
     @Query(sort: \Activity.startAt)
     private var allActivities: [Activity]
 
+    @State private var chartMode: ChartMode = .proportion
+
+    enum ChartMode: String, CaseIterable, Identifiable {
+        case proportion
+        case timeline
+
+        var id: String {
+            rawValue
+        }
+
+        var displayName: String {
+            switch self {
+            case .proportion: "割合"
+            case .timeline: "時系列"
+            }
+        }
+    }
+
     private var activities: [Activity] {
         ActivityDateExtractor.activities(on: date, from: allActivities)
     }
@@ -25,8 +43,23 @@ struct DayDetailView: View {
             }
 
             Section("内訳") {
-                DayPieChart(slices: slices)
-                    .padding(.vertical, 8)
+                Picker("表示", selection: $chartMode) {
+                    ForEach(ChartMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Group {
+                    switch chartMode {
+                    case .proportion:
+                        DayPieChart(slices: slices)
+                    case .timeline:
+                        TimelinePieChart(day: date, activities: activities)
+                            .frame(height: 260)
+                    }
+                }
+                .padding(.vertical, 8)
             }
 
             Section("記録") {
