@@ -139,12 +139,13 @@ enum PeriodActivitySummary {
             }
         }
         return rootIDs
-            .map { buildNode(id: $0, buckets: buckets, childrenByParent: childrenByParent) }
+            .map { buildNode(id: $0, parentHex: nil, buckets: buckets, childrenByParent: childrenByParent) }
             .sorted { $0.totalSeconds > $1.totalSeconds }
     }
 
     private static func buildNode(
         id: UUID,
+        parentHex: String?,
         buckets: [UUID: Bucket],
         childrenByParent: [UUID: [UUID]]
     ) -> CategoryStats {
@@ -157,17 +158,34 @@ enum PeriodActivitySummary {
                 children: []
             )
         }
+        let nodeHex: String = if let parentHex {
+            // 子は親色の濃淡で区別する。 sortOrder 順で連続的にシフト。
+            HexColor.shaded(parentHex: parentHex, childIndex: childShadeIndex(of: bucket.template))
+        } else {
+            bucket.template.colorHex
+        }
         let childIDs = childrenByParent[id] ?? []
         let children = childIDs
-            .map { buildNode(id: $0, buckets: buckets, childrenByParent: childrenByParent) }
+            .map { buildNode(
+                id: $0,
+                parentHex: bucket.template.colorHex,
+                buckets: buckets,
+                childrenByParent: childrenByParent
+            ) }
             .sorted { $0.totalSeconds > $1.totalSeconds }
         let childSum = children.reduce(0) { $0 + $1.totalSeconds }
         return CategoryStats(
             id: id,
             templateName: bucket.template.name,
-            colorHex: bucket.template.colorHex,
+            colorHex: nodeHex,
             totalSeconds: bucket.seconds + childSum,
             children: children
         )
+    }
+
+    private static func childShadeIndex(of template: ActivityTemplate) -> Int {
+        guard let siblings = template.parent?.children else { return 0 }
+        let ordered = siblings.sorted { $0.sortOrder < $1.sortOrder }
+        return ordered.firstIndex(where: { $0.id == template.id }) ?? 0
     }
 }
