@@ -11,7 +11,10 @@ struct HomeView: View {
     )
     private var inProgressActivities: [Activity]
 
-    @Query(sort: \ActivityTemplate.sortOrder)
+    @Query(
+        filter: #Predicate<ActivityTemplate> { !$0.isHidden },
+        sort: \ActivityTemplate.sortOrder
+    )
     private var templates: [ActivityTemplate]
 
     @State private var errorMessage: String?
@@ -55,7 +58,7 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "square.grid.2x2")
                     }
-                    .accessibilityLabel("テンプレート管理")
+                    .accessibilityLabel("アクション管理")
                 }
             }
             .sheet(isPresented: $isPresentingTemplates) {

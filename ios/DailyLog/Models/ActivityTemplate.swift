@@ -10,6 +10,7 @@ final class ActivityTemplate {
     var sortOrder: Int = 0
     var reminderMinutes: Int?
     var isMealType: Bool = false
+    var isHidden: Bool = false
     var createdAt: Date = Date()
 
     var parent: ActivityTemplate?
@@ -28,6 +29,7 @@ final class ActivityTemplate {
         sortOrder: Int = 0,
         reminderMinutes: Int? = nil,
         isMealType: Bool = false,
+        isHidden: Bool = false,
         parent: ActivityTemplate? = nil,
         createdAt: Date = Date()
     ) {
@@ -38,6 +40,7 @@ final class ActivityTemplate {
         self.sortOrder = sortOrder
         self.reminderMinutes = reminderMinutes
         self.isMealType = isMealType
+        self.isHidden = isHidden
         self.parent = parent
         self.createdAt = createdAt
     }

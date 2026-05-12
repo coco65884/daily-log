@@ -30,6 +30,17 @@ final class ModelTests: XCTestCase {
     }
 
     @MainActor
+    func testTemplateIsHiddenDefaultsToFalse() throws {
+        let context = container.mainContext
+        let template = ActivityTemplate(name: "勉強")
+        context.insert(template)
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<ActivityTemplate>())
+        XCTAssertEqual(fetched.first?.isHidden, false)
+    }
+
+    @MainActor
     func testTemplateHierarchy() throws {
         let context = container.mainContext
         let parent = ActivityTemplate(name: "仕事")
