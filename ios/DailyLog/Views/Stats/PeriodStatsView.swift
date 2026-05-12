@@ -115,7 +115,6 @@ struct PeriodStatsView: View {
                     .foregroundStyle(.secondary)
             } else {
                 CategoryBarChart(categories: displayCategories)
-                    .frame(minHeight: CGFloat(displayCategories.count * 36 + 40))
 
                 ForEach(displayCategories) { category in
                     CategoryRow(

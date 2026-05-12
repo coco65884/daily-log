@@ -15,11 +15,11 @@ struct CategoryBarChart: View {
         Chart {
             ForEach(categories) { category in
                 BarMark(
-                    x: .value("時間", category.totalSeconds / 3600),
-                    y: .value("カテゴリ", category.templateName)
+                    x: .value("カテゴリ", category.templateName),
+                    y: .value("時間", category.totalSeconds / 3600)
                 )
                 .foregroundStyle(Color(hex: category.colorHex) ?? .accentColor)
-                .annotation(position: .trailing, alignment: .leading) {
+                .annotation(position: .top, alignment: .center) {
                     Text(DurationFormatter.elapsed(seconds: Int(category.totalSeconds)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -28,6 +28,18 @@ struct CategoryBarChart: View {
         }
         .chartXAxis {
             AxisMarks(values: .automatic) { value in
+                AxisValueLabel {
+                    if let name = value.as(String.self) {
+                        Text(name)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .automatic) { value in
                 AxisGridLine()
                 AxisValueLabel {
                     if let hours = value.as(Double.self) {
@@ -36,9 +48,7 @@ struct CategoryBarChart: View {
                 }
             }
         }
-        .chartYAxis {
-            AxisMarks(position: .leading)
-        }
+        .frame(minHeight: 220)
     }
 
     private var legend: some View {
