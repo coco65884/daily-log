@@ -6,6 +6,12 @@ struct TemplateEditView: View {
     @Environment(\.dismiss) private var dismiss
 
     let existing: ActivityTemplate?
+    let defaultParent: ActivityTemplate?
+
+    init(existing: ActivityTemplate?, defaultParent: ActivityTemplate? = nil) {
+        self.existing = existing
+        self.defaultParent = defaultParent
+    }
 
     @Query(sort: \ActivityTemplate.sortOrder)
     private var allTemplates: [ActivityTemplate]
@@ -54,7 +60,7 @@ struct TemplateEditView: View {
                 }
 
                 Section("分類") {
-                    Picker("親テンプレ", selection: $parentID) {
+                    Picker("親アクション", selection: $parentID) {
                         Text("なし").tag(nil as UUID?)
                         ForEach(parentCandidates) { template in
                             Text(template.name).tag(template.id as UUID?)
@@ -71,7 +77,7 @@ struct TemplateEditView: View {
                     }
                 }
             }
-            .navigationTitle(existing == nil ? "新規テンプレ" : "編集")
+            .navigationTitle(existing == nil ? "新規アクション" : "アクション編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -82,7 +88,7 @@ struct TemplateEditView: View {
                         .disabled(isSaveDisabled)
                 }
             }
-            .onAppear(perform: loadFromExisting)
+            .onAppear(perform: loadInitialState)
             .alert(
                 "エラー",
                 isPresented: Binding(
@@ -98,20 +104,24 @@ struct TemplateEditView: View {
         }
     }
 
-    private func loadFromExisting() {
-        guard let existing else { return }
-        name = existing.name
-        iconName = existing.iconName
-        colorHex = existing.colorHex
-        parentID = existing.parent?.id
-        if let minutes = existing.reminderMinutes {
-            hasReminder = true
-            reminderMinutes = minutes
-        } else {
-            hasReminder = false
-            reminderMinutes = 30
+    private func loadInitialState() {
+        if let existing {
+            name = existing.name
+            iconName = existing.iconName
+            colorHex = existing.colorHex
+            parentID = existing.parent?.id
+            if let minutes = existing.reminderMinutes {
+                hasReminder = true
+                reminderMinutes = minutes
+            } else {
+                hasReminder = false
+                reminderMinutes = 30
+            }
+            isMealType = existing.isMealType
+        } else if let defaultParent {
+            parentID = defaultParent.id
+            colorHex = defaultParent.colorHex
         }
-        isMealType = existing.isMealType
     }
 
     private func save() {
