@@ -32,6 +32,9 @@ fastlane/test_output
 # xcodegen 生成物 (project.yml から再生成する方針。Clone 後は `make -C ios generate`)
 *.xcodeproj
 
+# 個人の署名設定 (Team ID など)。example ファイルからコピーして使う
+ios/Signing.local.xcconfig
+
 # Environment variables
 .env
 .env.*

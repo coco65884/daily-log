@@ -1,0 +1,10 @@
+// 共通の署名設定。個人の Team ID などは Signing.local.xcconfig (gitignored)
+// に書いてこのファイルから optional include する。
+//
+// 初回セットアップ:
+//   cp ios/Signing.local.xcconfig.example ios/Signing.local.xcconfig
+//   # 生成した Signing.local.xcconfig を編集して DEVELOPMENT_TEAM を設定
+
+CODE_SIGN_STYLE = Automatic
+
+#include? "Signing.local.xcconfig"

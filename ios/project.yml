@@ -6,20 +6,28 @@ options:
   createIntermediateGroups: true
   generateEmptyDirectories: true
   xcodeVersion: "15.0"
+
+# Signing (DEVELOPMENT_TEAM など) は xcconfig 経由で注入することで `make generate` の
+# たびに Xcode が設定した Team が消える問題を回避。Signing.xcconfig は Signing.local.xcconfig
+# (gitignored) を optional include する。
+configFiles:
+  Debug: Signing.xcconfig
+  Release: Signing.xcconfig
+
 settings:
   base:
     SWIFT_VERSION: "5.9"
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: ""
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     # SwiftData (@Model は class = 非 Sendable) に対する KeyPath の Sendable 警告が
     # `complete` で大量に出るため minimal に緩和。Swift 6 本格移行時に再評価。
     SWIFT_STRICT_CONCURRENCY: minimal
     # Xcode 16+ の recommended settings を project.yml に反映して再生成後も維持。
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    # CODE_SIGN_STYLE と DEVELOPMENT_TEAM は Signing.xcconfig 側で管理。
+    # project.yml 側で `DEVELOPMENT_TEAM: ""` を書くと xcconfig の値を空文字で上書きしてしまう。
 
 packages:
   ZIPFoundation:
