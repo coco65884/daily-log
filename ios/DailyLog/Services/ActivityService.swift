@@ -35,12 +35,17 @@ struct ActivityService {
             notifier.scheduleReminder(for: activity)
         }
         publishSnapshot(for: activity)
-        Task { await LiveActivityController.shared.endAll() }
-        LiveActivityController.shared.start(
-            template: template,
-            startAt: now,
-            nextCandidates: candidates
-        )
+        // 過去分を await で片付けてから新規 Live Activity を request する。
+        // 順序が逆だと、新規作成直後の endAll が今作ったものまで end してしまい、
+        // ロック画面から消える (Issue #70)。
+        Task { @MainActor in
+            await LiveActivityController.shared.endAll()
+            LiveActivityController.shared.start(
+                template: template,
+                startAt: now,
+                nextCandidates: candidates
+            )
+        }
         return activity
     }
 

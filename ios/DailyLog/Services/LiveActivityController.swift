@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import os.log
 
 /// 行動開始/停止に連動して ActivityKit の Live Activity を制御する。
 ///
@@ -9,8 +10,13 @@ import Foundation
 struct LiveActivityController {
     static let shared = LiveActivityController()
 
+    private static let log = Logger(subsystem: "com.coco.daily-log", category: "LiveActivity")
+
     func start(template: ActivityTemplate, startAt: Date, nextCandidates: [NextActionCandidate] = []) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            Self.log.info("areActivitiesEnabled=false — Live Activity をスキップ。設定>DailyLog>Live Activities を確認。")
+            return
+        }
 
         let attributes = DailyLogActivityAttributes(
             templateName: template.name,
@@ -25,13 +31,17 @@ struct LiveActivityController {
         let content = ActivityContent(state: state, staleDate: nil)
 
         do {
-            _ = try ActivityKit.Activity<DailyLogActivityAttributes>.request(
+            let activity = try ActivityKit.Activity<DailyLogActivityAttributes>.request(
                 attributes: attributes,
                 content: content,
                 pushType: nil
             )
+            Self.log
+                .info(
+                    "Live Activity 開始: id=\(activity.id, privacy: .public) template=\(template.name, privacy: .public)"
+                )
         } catch {
-            // ユーザー拒否など。失敗は silent (アプリ本体は動作継続)。
+            Self.log.error("Live Activity の request に失敗: \(error.localizedDescription, privacy: .public)")
         }
     }
 
