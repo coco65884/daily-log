@@ -126,6 +126,19 @@ final class ModelTests: XCTestCase {
     }
 
     @MainActor
+    func testReminderDefaultsByNameMatchesPresets() {
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["睡眠"], 600)
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["食事"], 120)
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["仕事"], 600)
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["勉強"], 480)
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["運動"], 120)
+        XCTAssertEqual(DefaultTemplates.reminderDefaultsByName["移動"], 120)
+        // 休憩・趣味は nil なので辞書に含まれない
+        XCTAssertNil(DefaultTemplates.reminderDefaultsByName["休憩"])
+        XCTAssertNil(DefaultTemplates.reminderDefaultsByName["趣味"])
+    }
+
+    @MainActor
     func testDefaultTemplateSeeding() throws {
         let seededContainer = try AppModelContainer.makeContainer(inMemory: false)
         let context = ModelContext(seededContainer)
