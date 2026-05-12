@@ -27,6 +27,7 @@ struct ActivityService {
         for activity in closed {
             notifier.cancelReminder(for: activity)
         }
+        let candidates = (try? predictNextCandidates(excluding: template.id, at: now)) ?? []
         let activity = Activity(template: template, startAt: now)
         context.insert(activity)
         try context.save()
@@ -35,8 +36,34 @@ struct ActivityService {
         }
         publishSnapshot(for: activity)
         Task { await LiveActivityController.shared.endAll() }
-        LiveActivityController.shared.start(template: template, startAt: now)
+        LiveActivityController.shared.start(
+            template: template,
+            startAt: now,
+            nextCandidates: candidates
+        )
         return activity
+    }
+
+    private func predictNextCandidates(
+        excluding excludedID: UUID,
+        at now: Date,
+        limit: Int = NextActionPredictor.defaultLimit
+    ) throws -> [NextActionCandidate] {
+        let predictor = NextActionPredictor()
+        let templates = try predictor.predict(
+            at: now,
+            in: context,
+            excluding: excludedID,
+            limit: limit
+        )
+        return templates.map { template in
+            NextActionCandidate(
+                templateID: template.id,
+                name: template.name,
+                iconName: template.iconName,
+                colorHex: template.colorHex
+            )
+        }
     }
 
     /// 最も古い進行中を 1 件停止して返す。複数ある場合は防御的に全て停止する。

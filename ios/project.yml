@@ -37,6 +37,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.coco.daily-log
         PRODUCT_NAME: DailyLog
+        # Live Activity Intent の perform() は host app プロセスのみで動く。
+        # Shared/ 配下に置く必要があるため、host 限定コードを #if HOST_APP で囲む。
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) HOST_APP"
         CODE_SIGN_ENTITLEMENTS: DailyLog/DailyLog.entitlements
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: DailyLog

@@ -9,7 +9,7 @@ import Foundation
 struct LiveActivityController {
     static let shared = LiveActivityController()
 
-    func start(template: ActivityTemplate, startAt: Date) {
+    func start(template: ActivityTemplate, startAt: Date, nextCandidates: [NextActionCandidate] = []) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let attributes = DailyLogActivityAttributes(
@@ -18,7 +18,10 @@ struct LiveActivityController {
             colorHex: template.colorHex,
             isMealType: template.isMealType
         )
-        let state = DailyLogActivityAttributes.ContentState(startAt: startAt)
+        let state = DailyLogActivityAttributes.ContentState(
+            startAt: startAt,
+            nextCandidates: nextCandidates
+        )
         let content = ActivityContent(state: state, staleDate: nil)
 
         do {

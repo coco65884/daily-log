@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -21,9 +22,27 @@ struct DailyLogLiveActivity: Widget {
                         .font(.title3)
                         .frame(maxWidth: 72, alignment: .trailing)
                 }
-                DynamicIslandExpandedRegion(.bottom) {
+                DynamicIslandExpandedRegion(.center) {
                     Text(context.attributes.templateName)
                         .font(.headline)
+                        .lineLimit(1)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    HStack(spacing: 8) {
+                        Button(intent: StopCurrentActivityIntent()) {
+                            Label("停止", systemImage: "stop.fill")
+                                .font(.subheadline)
+                        }
+                        .tint(.red)
+                        ForEach(context.state.nextCandidates.prefix(2)) { candidate in
+                            Button(intent: StartTemplateIntent(templateID: candidate.templateID)) {
+                                Label(candidate.name, systemImage: candidate.iconName)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                            }
+                            .tint(Color(hex: candidate.colorHex) ?? .accentColor)
+                        }
+                    }
                 }
             } compactLeading: {
                 icon(for: context.attributes)
@@ -54,24 +73,36 @@ private struct LockScreenView: View {
     let context: ActivityViewContext<DailyLogActivityAttributes>
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 iconBadge
-                Text(context.attributes.templateName)
-                    .font(.headline)
-                Spacer()
-                if context.attributes.isMealType {
-                    Label("食事", systemImage: "fork.knife")
-                        .labelStyle(.iconOnly)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.attributes.templateName)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Text(context.state.startAt, style: .timer)
+                        .font(.system(.title3, design: .monospaced))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
+
+                Spacer()
+
+                Button(intent: StopCurrentActivityIntent()) {
+                    Label("停止", systemImage: "stop.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.title3)
+                        .padding(10)
+                }
+                .tint(.red)
+                .buttonStyle(.bordered)
+                .accessibilityLabel("停止")
             }
 
-            Text(context.state.startAt, style: .timer)
-                .font(.system(.largeTitle, design: .monospaced))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            if !context.state.nextCandidates.isEmpty {
+                candidateRow
+            }
         }
         .padding()
     }
@@ -85,5 +116,24 @@ private struct LockScreenView: View {
                 Circle()
                     .fill(Color(hex: context.attributes.colorHex) ?? .accentColor)
             )
+    }
+
+    private var candidateRow: some View {
+        HStack(spacing: 6) {
+            Text("次:")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            ForEach(context.state.nextCandidates.prefix(3)) { candidate in
+                Button(intent: StartTemplateIntent(templateID: candidate.templateID)) {
+                    Label(candidate.name, systemImage: candidate.iconName)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .padding(.horizontal, 4)
+                }
+                .tint(Color(hex: candidate.colorHex) ?? .accentColor)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
     }
 }
