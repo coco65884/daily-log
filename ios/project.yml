@@ -26,6 +26,9 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
     # Xcode 16+ の recommended settings を project.yml に反映して再生成後も維持。
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    # Xcode 16+ で増えた "Enable String Catalog Symbol Generation" 推奨設定。
+    LOCALIZED_STRING_SWIFTUI_SUPPORT: YES
+    STRING_CATALOG_GENERATE_SYMBOLS: YES
     # CODE_SIGN_STYLE と DEVELOPMENT_TEAM は Signing.xcconfig 側で管理。
     # project.yml 側で `DEVELOPMENT_TEAM: ""` を書くと xcconfig の値を空文字で上書きしてしまう。
 
