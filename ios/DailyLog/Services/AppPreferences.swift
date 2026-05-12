@@ -8,6 +8,7 @@ enum AppPreferences {
     enum Keys {
         static let iCloudSyncEnabled = "pref.iCloudSyncEnabled"
         static let notificationsEnabled = "pref.notificationsEnabled"
+        static let alertDefaultsV2Applied = "pref.alertDefaultsV2Applied"
     }
 
     private static var store: UserDefaults {
@@ -27,5 +28,10 @@ enum AppPreferences {
             return true
         }
         set { store.set(newValue, forKey: Keys.notificationsEnabled) }
+    }
+
+    static var alertDefaultsV2Applied: Bool {
+        get { store.bool(forKey: Keys.alertDefaultsV2Applied) }
+        set { store.set(newValue, forKey: Keys.alertDefaultsV2Applied) }
     }
 }
