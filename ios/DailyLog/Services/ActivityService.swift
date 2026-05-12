@@ -35,12 +35,26 @@ struct ActivityService {
             notifier.scheduleReminder(for: activity)
         }
         publishSnapshot(for: activity)
-        Task { await LiveActivityController.shared.endAll() }
-        LiveActivityController.shared.start(
-            template: template,
-            startAt: now,
-            nextCandidates: candidates
-        )
+        // 過去分を await で片付けてから新規 Live Activity を request する。
+        // 順序が逆だと、新規作成直後の endAll が今作ったものまで end してしまい、
+        // ロック画面から消える (Issue #70)。
+        // Task に SwiftData モデルを掴ませないため、ここで value snapshot を取る
+        // (テスト等でコンテナが破棄された後の参照→fatal を避ける)。
+        let templateName = template.name
+        let iconName = template.iconName
+        let colorHex = template.colorHex
+        let isMealType = template.isMealType
+        Task { @MainActor in
+            await LiveActivityController.shared.endAll()
+            LiveActivityController.shared.start(
+                templateName: templateName,
+                iconName: iconName,
+                colorHex: colorHex,
+                isMealType: isMealType,
+                startAt: now,
+                nextCandidates: candidates
+            )
+        }
         return activity
     }
 

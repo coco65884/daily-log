@@ -1,22 +1,39 @@
 import ActivityKit
 import Foundation
+import os.log
 
 /// 行動開始/停止に連動して ActivityKit の Live Activity を制御する。
 ///
 /// `ActivityKit.Activity` と SwiftData の `Activity` クラスが同名なので、
 /// 明示的なフルパスで参照する。
+///
+/// API は SwiftData モデルではなく value-type のパラメータを受け取る。
+/// 非同期で利用する場面 (Task で endAll → start の直列化) で、呼び出し元の
+/// 寿命が切れた managed object に依存しないようにするため。
 @MainActor
 struct LiveActivityController {
     static let shared = LiveActivityController()
 
-    func start(template: ActivityTemplate, startAt: Date, nextCandidates: [NextActionCandidate] = []) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+    private static let log = Logger(subsystem: "com.coco.daily-log", category: "LiveActivity")
+
+    func start(
+        templateName: String,
+        iconName: String,
+        colorHex: String,
+        isMealType: Bool,
+        startAt: Date,
+        nextCandidates: [NextActionCandidate] = []
+    ) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            Self.log.info("areActivitiesEnabled=false — Live Activity をスキップ。設定>DailyLog>Live Activities を確認。")
+            return
+        }
 
         let attributes = DailyLogActivityAttributes(
-            templateName: template.name,
-            iconName: template.iconName,
-            colorHex: template.colorHex,
-            isMealType: template.isMealType
+            templateName: templateName,
+            iconName: iconName,
+            colorHex: colorHex,
+            isMealType: isMealType
         )
         let state = DailyLogActivityAttributes.ContentState(
             startAt: startAt,
@@ -25,13 +42,17 @@ struct LiveActivityController {
         let content = ActivityContent(state: state, staleDate: nil)
 
         do {
-            _ = try ActivityKit.Activity<DailyLogActivityAttributes>.request(
+            let activity = try ActivityKit.Activity<DailyLogActivityAttributes>.request(
                 attributes: attributes,
                 content: content,
                 pushType: nil
             )
+            Self.log
+                .info(
+                    "Live Activity 開始: id=\(activity.id, privacy: .public) template=\(templateName, privacy: .public)"
+                )
         } catch {
-            // ユーザー拒否など。失敗は silent (アプリ本体は動作継続)。
+            Self.log.error("Live Activity の request に失敗: \(error.localizedDescription, privacy: .public)")
         }
     }
 
