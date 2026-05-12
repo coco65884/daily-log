@@ -42,6 +42,8 @@ struct HomeView: View {
                         onTap: { start(with: $0) }
                     )
 
+                    DailyMemoCard()
+
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal)

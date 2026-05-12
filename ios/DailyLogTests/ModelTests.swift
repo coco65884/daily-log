@@ -151,6 +151,32 @@ final class ModelTests: XCTestCase {
     }
 
     @MainActor
+    func testDailyMemoDayKeyFormatting() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        if let tz = TimeZone(identifier: "Asia/Tokyo") {
+            calendar.timeZone = tz
+        }
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 5
+        components.day = 13
+        components.hour = 14
+        let date = try XCTUnwrap(calendar.date(from: components))
+        XCTAssertEqual(DailyMemo.dayKey(for: date, calendar: calendar), "2026-05-13")
+    }
+
+    @MainActor
+    func testDailyMemoUniqueByDayKey() throws {
+        let context = container.mainContext
+        context.insert(DailyMemo(dayKey: "2026-05-13", text: "first"))
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<DailyMemo>())
+        XCTAssertEqual(fetched.count, 1)
+        XCTAssertEqual(fetched.first?.text, "first")
+    }
+
+    @MainActor
     func testAppSettingsDefaults() throws {
         let context = container.mainContext
         let settings = AppSettings()
