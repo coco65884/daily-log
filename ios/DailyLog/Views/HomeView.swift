@@ -11,15 +11,11 @@ struct HomeView: View {
     )
     private var inProgressActivities: [Activity]
 
-    @Query(
-        filter: #Predicate<ActivityTemplate> { $0.parent == nil },
-        sort: \ActivityTemplate.sortOrder
-    )
-    private var rootTemplates: [ActivityTemplate]
+    @Query(sort: \ActivityTemplate.sortOrder)
+    private var templates: [ActivityTemplate]
 
     @State private var errorMessage: String?
     @State private var isPresentingTemplates = false
-    @State private var childrenParent: ActivityTemplate?
 
     private var currentActivity: Activity? {
         inProgressActivities.first
@@ -39,15 +35,8 @@ struct HomeView: View {
                     )
 
                     TemplateGrid(
-                        templates: rootTemplates,
-                        onTap: { start(with: $0) },
-                        onLongPress: { template in
-                            if template.children.isEmpty {
-                                start(with: template)
-                            } else {
-                                childrenParent = template
-                            }
-                        }
+                        templates: templates,
+                        onTap: { start(with: $0) }
                     )
 
                     Spacer(minLength: 0)
@@ -71,11 +60,6 @@ struct HomeView: View {
             }
             .sheet(isPresented: $isPresentingTemplates) {
                 TemplateListView()
-            }
-            .sheet(item: $childrenParent) { parent in
-                ChildTemplateSheet(parent: parent) { selected in
-                    start(with: selected)
-                }
             }
             .alert(
                 "エラー",
