@@ -1,3 +1,5 @@
+import Darwin
+import Foundation
 import SwiftUI
 
 /// 24時間時計の見た目で、その日のアクティビティを「開始-終了」の時刻位置に
@@ -81,13 +83,15 @@ struct TimelinePieChart: View {
             let frac = now.timeIntervalSince(dayStart) / 86400.0
             let deg = frac * 360.0 - 90.0
             let radians = deg * .pi / 180.0
+            let cosValue = Darwin.cos(radians)
+            let sinValue = Darwin.sin(radians)
             let from = CGPoint(
-                x: center.x + cos(radians) * inner,
-                y: center.y + sin(radians) * inner
+                x: center.x + cosValue * inner,
+                y: center.y + sinValue * inner
             )
             let to = CGPoint(
-                x: center.x + cos(radians) * outer,
-                y: center.y + sin(radians) * outer
+                x: center.x + cosValue * outer,
+                y: center.y + sinValue * outer
             )
             var line = Path()
             line.move(to: from)
@@ -110,8 +114,8 @@ struct TimelinePieChart: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .position(
-                        x: center.x + cos(radians) * (labelRadius + 14),
-                        y: center.y + sin(radians) * (labelRadius + 14)
+                        x: center.x + Darwin.cos(radians) * (labelRadius + 14),
+                        y: center.y + Darwin.sin(radians) * (labelRadius + 14)
                     )
             }
         }
