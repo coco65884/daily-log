@@ -6,10 +6,27 @@ struct PeriodStatsView: View {
     private var allActivities: [Activity]
 
     @State private var period: PeriodActivitySummary.Period = .week
+    @State private var displayMode: DisplayMode = .individual
     @State private var referenceDate: Date = .init()
     @State private var expandedIDs: Set<UUID> = []
 
     private let calendar: Calendar = .currentGregorian
+
+    enum DisplayMode: String, CaseIterable, Identifiable {
+        case individual
+        case grouped
+
+        var id: String {
+            rawValue
+        }
+
+        var displayName: String {
+            switch self {
+            case .individual: "個別"
+            case .grouped: "ジャンル別"
+            }
+        }
+    }
 
     private var summary: PeriodActivitySummary.Summary {
         PeriodActivitySummary.summarize(
@@ -20,9 +37,19 @@ struct PeriodStatsView: View {
         )
     }
 
+    private var displayCategories: [PeriodActivitySummary.CategoryStats] {
+        switch displayMode {
+        case .grouped:
+            summary.categories
+        case .individual:
+            flattenedCategories(from: summary.categories)
+        }
+    }
+
     var body: some View {
         List {
             periodSection
+            displayModeSection
             categoriesSection
             mealSection
         }
@@ -40,6 +67,17 @@ struct PeriodStatsView: View {
             .pickerStyle(.segmented)
 
             periodNavigation
+        }
+    }
+
+    private var displayModeSection: some View {
+        Section {
+            Picker("表示", selection: $displayMode) {
+                ForEach(DisplayMode.allCases) { option in
+                    Text(option.displayName).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
         }
     }
 
@@ -71,15 +109,15 @@ struct PeriodStatsView: View {
     }
 
     private var categoriesSection: some View {
-        Section("カテゴリ別") {
-            if summary.categories.isEmpty {
+        Section(categoriesSectionTitle) {
+            if displayCategories.isEmpty {
                 Text("この期間の記録はありません")
                     .foregroundStyle(.secondary)
             } else {
-                CategoryBarChart(categories: summary.categories)
-                    .frame(minHeight: CGFloat(summary.categories.count * 36 + 40))
+                CategoryBarChart(categories: displayCategories)
+                    .frame(minHeight: CGFloat(displayCategories.count * 36 + 40))
 
-                ForEach(summary.categories) { category in
+                ForEach(displayCategories) { category in
                     CategoryRow(
                         category: category,
                         isExpanded: expandedIDs.contains(category.id),
@@ -87,6 +125,13 @@ struct PeriodStatsView: View {
                     )
                 }
             }
+        }
+    }
+
+    private var categoriesSectionTitle: String {
+        switch displayMode {
+        case .individual: "アクション別"
+        case .grouped: "ジャンル別"
         }
     }
 
@@ -120,6 +165,37 @@ struct PeriodStatsView: View {
         } else {
             expandedIDs.insert(id)
         }
+    }
+
+    /// 親子ツリーを平坦化する。親の「自分自身の時間 (= totalSeconds - 子合計)」が
+    /// 正のときだけ親エントリを残し、子はそのまま個別エントリとして並べる。
+    private func flattenedCategories(
+        from categories: [PeriodActivitySummary.CategoryStats]
+    ) -> [PeriodActivitySummary.CategoryStats] {
+        var result: [PeriodActivitySummary.CategoryStats] = []
+        for parent in categories {
+            let childSum = parent.children.reduce(0) { $0 + $1.totalSeconds }
+            let parentBare = parent.totalSeconds - childSum
+            if parentBare > 0 || parent.children.isEmpty {
+                result.append(PeriodActivitySummary.CategoryStats(
+                    id: parent.id,
+                    templateName: parent.templateName,
+                    colorHex: parent.colorHex,
+                    totalSeconds: parentBare > 0 ? parentBare : parent.totalSeconds,
+                    children: []
+                ))
+            }
+            for child in parent.children {
+                result.append(PeriodActivitySummary.CategoryStats(
+                    id: child.id,
+                    templateName: child.templateName,
+                    colorHex: child.colorHex,
+                    totalSeconds: child.totalSeconds,
+                    children: []
+                ))
+            }
+        }
+        return result.sorted { $0.totalSeconds > $1.totalSeconds }
     }
 }
 
