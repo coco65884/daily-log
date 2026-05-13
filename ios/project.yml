@@ -29,6 +29,9 @@ settings:
     # Xcode 16+ で増えた "Enable String Catalog Symbol Generation" 推奨設定。
     LOCALIZED_STRING_SWIFTUI_SUPPORT: YES
     STRING_CATALOG_GENERATE_SYMBOLS: YES
+    # Xcode 16+ "Enable Generated Asset Symbol Extensions" 推奨設定。
+    # Assets.xcassets 内の色/画像を Image(.foo) のように型安全に参照できる。
+    ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_EXTENSIONS: YES
     # CODE_SIGN_STYLE と DEVELOPMENT_TEAM は Signing.xcconfig 側で管理。
     # project.yml 側で `DEVELOPMENT_TEAM: ""` を書くと xcconfig の値を空文字で上書きしてしまう。
 
