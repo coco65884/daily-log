@@ -1,18 +1,36 @@
 import Charts
 import SwiftUI
 
-struct WeekActivityChart: View {
-    let weekStart: Date
+/// 1 日 = 1 列の 24 時間チャート。週 (7 列・幅フィット) と月 (日数分・横スクロール) で共用する。
+/// 上=00:00, 下=24:00。各セグメントをタップするとアクション名/時刻/所要時間を吹き出し表示する。
+struct ActivityColumnsChart: View {
     let spans: [WeekActivityLayout.Span]
-    let weekdayLabels: [String]
+    let columnLabels: [String]
+    /// nil = 利用可能幅にフィット (週)。非 nil = 列ごとに固定幅で横スクロール (月)。
+    var columnWidth: CGFloat?
 
     @State private var selectedSpanID: UUID?
+
+    private var columnCount: Int {
+        columnLabels.count
+    }
 
     private var selectedSpan: WeekActivityLayout.Span? {
         spans.first { $0.id == selectedSpanID }
     }
 
     var body: some View {
+        if let columnWidth {
+            ScrollView(.horizontal, showsIndicators: false) {
+                chart
+                    .frame(width: CGFloat(columnCount) * columnWidth)
+            }
+        } else {
+            chart
+        }
+    }
+
+    private var chart: some View {
         Chart {
             ForEach(spans) { span in
                 let xStart = Double(span.weekdayIndex) - 0.4
@@ -30,11 +48,11 @@ struct WeekActivityChart: View {
                 .opacity(selectedSpanID == nil || selectedSpanID == span.id ? 0.95 : 0.4)
             }
         }
-        .chartXScale(domain: -0.5 ... 6.5)
+        .chartXScale(domain: -0.5 ... (Double(columnCount) - 0.5))
         .chartYScale(domain: 0.0 ... 24.0)
         .chartXAxis {
-            AxisMarks(values: Array(0 ..< 7).map(Double.init)) { value in
-                AxisValueLabel { weekdayLabel(for: value) }
+            AxisMarks(values: Array(0 ..< max(columnCount, 1)).map(Double.init)) { value in
+                AxisValueLabel { columnLabel(for: value) }
             }
         }
         .chartYAxis {
@@ -96,7 +114,7 @@ struct WeekActivityChart: View {
     @ViewBuilder
     private func callout(for span: WeekActivityLayout.Span, proxy: ChartProxy, geo: GeometryProxy) -> some View {
         if let point = calloutPoint(for: span, proxy: proxy, geo: geo) {
-            CalloutBubble(
+            ActivityCallout(
                 title: span.templateName,
                 timeRange: timeRangeText(for: span),
                 duration: durationText(for: span)
@@ -133,19 +151,19 @@ struct WeekActivityChart: View {
     }
 
     @ViewBuilder
-    private func weekdayLabel(for value: AxisValue) -> some View {
+    private func columnLabel(for value: AxisValue) -> some View {
         if let raw = value.as(Double.self) {
             let idx = Int(raw)
-            if idx >= 0, idx < weekdayLabels.count {
-                Text(weekdayLabels[idx])
-                    .font(.caption)
+            if idx >= 0, idx < columnLabels.count {
+                Text(columnLabels[idx])
+                    .font(.caption2)
             }
         }
     }
 }
 
 /// セグメントタップ時に表示する吹き出し。
-private struct CalloutBubble: View {
+private struct ActivityCallout: View {
     let title: String
     let timeRange: String
     let duration: String
