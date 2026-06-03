@@ -99,6 +99,47 @@ final class WeekActivityLayoutTests: XCTestCase {
         XCTAssertEqual(spans[0].endHours, 12.5, accuracy: 0.001)
     }
 
+    func testMonthRangeReturnsFirstDayAndDayCount() {
+        // 2026-04 (April) has 30 days.
+        let (start, dayCount) = WeekActivityLayout.monthRange(
+            containing: date(2026, 4, 15, 12, 0),
+            calendar: calendar
+        )
+        XCTAssertEqual(start, date(2026, 4, 1, 0, 0))
+        XCTAssertEqual(dayCount, 30)
+    }
+
+    func testMonthSpansUsesDayOfMonthAsColumnIndex() {
+        // April 15 14:00-16:00 -> column index 14 (0-based, day 15).
+        let activity = makeActivity(start: date(2026, 4, 15, 14, 0), duration: 2 * 3600)
+
+        let spans = WeekActivityLayout.monthSpans(
+            for: [activity],
+            monthContaining: date(2026, 4, 1, 12, 0),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(spans.count, 1)
+        XCTAssertEqual(spans[0].weekdayIndex, 14)
+        XCTAssertEqual(spans[0].startHours, 14, accuracy: 0.001)
+        XCTAssertEqual(spans[0].endHours, 16, accuracy: 0.001)
+    }
+
+    func testMonthSpansExcludesOtherMonths() {
+        let inApril = makeActivity(start: date(2026, 4, 10, 9, 0), duration: 3600)
+        let inMarch = makeActivity(start: date(2026, 3, 31, 9, 0), duration: 3600)
+        let inMay = makeActivity(start: date(2026, 5, 1, 9, 0), duration: 3600)
+
+        let spans = WeekActivityLayout.monthSpans(
+            for: [inMarch, inApril, inMay],
+            monthContaining: date(2026, 4, 15, 12, 0),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(spans.count, 1)
+        XCTAssertEqual(spans[0].weekdayIndex, 9)
+    }
+
     func testWeekStartContainingUsesCalendarFirstWeekday() {
         // 2026-04-22 is Wednesday. Week starts on Sunday = 2026-04-19.
         let reference = date(2026, 4, 22, 12, 0)

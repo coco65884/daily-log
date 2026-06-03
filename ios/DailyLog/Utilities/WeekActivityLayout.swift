@@ -23,16 +23,51 @@ enum WeekActivityLayout {
         calendar: Calendar = .currentGregorian,
         now: Date = Date()
     ) -> [Span] {
-        let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+        spans(for: activities, rangeStart: weekStart, dayCount: 7, calendar: calendar, now: now)
+    }
+
+    /// 指定月 (referenceDate が属する月) の Activity を Span 配列に変換する。
+    /// `weekdayIndex` は月内の日付インデックス (0 = 1 日)。
+    static func monthSpans(
+        for activities: [Activity],
+        monthContaining referenceDate: Date,
+        calendar: Calendar = .currentGregorian,
+        now: Date = Date()
+    ) -> [Span] {
+        let (start, dayCount) = monthRange(containing: referenceDate, calendar: calendar)
+        return spans(for: activities, rangeStart: start, dayCount: dayCount, calendar: calendar, now: now)
+    }
+
+    /// `referenceDate` が属する月の初日 (00:00) と日数を返す。
+    static func monthRange(
+        containing referenceDate: Date,
+        calendar: Calendar = .currentGregorian
+    ) -> (start: Date, dayCount: Int) {
+        let components = calendar.dateComponents([.year, .month], from: referenceDate)
+        let start = calendar.date(from: components) ?? calendar.startOfDay(for: referenceDate)
+        let dayCount = calendar.range(of: .day, in: .month, for: start)?.count ?? 30
+        return (start, dayCount)
+    }
+
+    /// `rangeStart` から `dayCount` 日分の Activity を Span 配列に変換する汎用版。
+    /// 日をまたぐ Activity は 1 日ごとに分割し、`weekdayIndex` は rangeStart からの経過日数。
+    static func spans(
+        for activities: [Activity],
+        rangeStart: Date,
+        dayCount: Int,
+        calendar: Calendar = .currentGregorian,
+        now: Date = Date()
+    ) -> [Span] {
+        let rangeEnd = calendar.date(byAdding: .day, value: dayCount, to: rangeStart) ?? rangeStart
         var spans: [Span] = []
 
         for activity in activities {
             let effectiveEnd = activity.endAt ?? now
-            // 週外は除外
-            guard activity.startAt < weekEnd, effectiveEnd > weekStart else { continue }
+            // 範囲外は除外
+            guard activity.startAt < rangeEnd, effectiveEnd > rangeStart else { continue }
 
-            let clippedStart = max(activity.startAt, weekStart)
-            let clippedEnd = min(effectiveEnd, weekEnd)
+            let clippedStart = max(activity.startAt, rangeStart)
+            let clippedEnd = min(effectiveEnd, rangeEnd)
             guard clippedEnd > clippedStart else { continue }
 
             var cursor = clippedStart
@@ -42,9 +77,9 @@ enum WeekActivityLayout {
                 let chunkEnd = min(clippedEnd, dayEnd)
 
                 let weekdayIndex = Int(
-                    (cursor.timeIntervalSince(weekStart) / 86400).rounded(.down)
+                    (cursor.timeIntervalSince(rangeStart) / 86400).rounded(.down)
                 )
-                guard weekdayIndex >= 0, weekdayIndex < 7 else {
+                guard weekdayIndex >= 0, weekdayIndex < dayCount else {
                     cursor = dayEnd
                     continue
                 }
