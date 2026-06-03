@@ -9,11 +9,11 @@ struct DayDetailView: View {
     @Query(sort: \Activity.startAt)
     private var allActivities: [Activity]
 
-    @State private var chartMode: ChartMode = .proportion
+    @State private var chartMode: ChartMode = .timeline
 
     enum ChartMode: String, CaseIterable, Identifiable {
-        case proportion
         case timeline
+        case proportion
 
         var id: String {
             rawValue
@@ -21,8 +21,8 @@ struct DayDetailView: View {
 
         var displayName: String {
             switch self {
-            case .proportion: "割合"
             case .timeline: "時系列"
+            case .proportion: "割合"
             }
         }
     }
@@ -84,10 +84,10 @@ struct DayDetailView: View {
         return formatter.string(from: date)
     }
 
+    /// 合計は日内にクリップ済みの slices から算出する。
+    /// 日付を跨ぐアクションは当日分のみ計上されるため 24 時間を超えない。
     private var totalDurationText: String {
-        let seconds = activities.reduce(0) { running, activity in
-            running + Int(activity.duration ?? 0)
-        }
+        let seconds = slices.reduce(0) { $0 + Int($1.totalSeconds) }
         return DurationFormatter.elapsed(seconds: seconds)
     }
 }

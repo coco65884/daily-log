@@ -46,6 +46,20 @@ final class DayActivitySummaryTests: XCTestCase {
         XCTAssertEqual(slices[0].totalSeconds, 2 * 3600, accuracy: 0.001)
     }
 
+    func testFullDaySpanningActivityCountsAtMost24Hours() {
+        let sleep = ActivityTemplate(name: "睡眠", colorHex: "#111111")
+        let day = date(2026, 4, 25)
+        // 2026-04-24 22:00 -> 2026-04-26 06:00 (32h total) covers all of day 25.
+        let activity = makeActivity(template: sleep, start: date(2026, 4, 24, 22, 0), duration: 32 * 3600)
+
+        let slices = DayActivitySummary.slices(for: [activity], on: day, calendar: calendar)
+        let total = slices.reduce(0) { $0 + $1.totalSeconds }
+
+        XCTAssertEqual(slices.count, 1)
+        XCTAssertEqual(slices[0].totalSeconds, 24 * 3600, accuracy: 0.001)
+        XCTAssertLessThanOrEqual(total, 24 * 3600)
+    }
+
     func testInProgressClipsToNow() {
         let work = ActivityTemplate(name: "仕事", colorHex: "#111111")
         let day = date(2026, 4, 25)
