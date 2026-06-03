@@ -11,12 +11,25 @@ struct TimelinePieChart: View {
     let activities: [Activity]
     let calendar: Calendar
     let now: Date
+    /// 時刻ラベル (0/6/12/18) を表示するか。カレンダーのミニ表示では false。
+    let showsHourLabels: Bool
+    /// 現在時刻の針 (today のみ) を表示するか。ミニ表示では false。
+    let showsNowHand: Bool
 
-    init(day: Date, activities: [Activity], calendar: Calendar = .currentGregorian, now: Date = Date()) {
+    init(
+        day: Date,
+        activities: [Activity],
+        calendar: Calendar = .currentGregorian,
+        now: Date = Date(),
+        showsHourLabels: Bool = true,
+        showsNowHand: Bool = true
+    ) {
         self.day = day
         self.activities = activities
         self.calendar = calendar
         self.now = now
+        self.showsHourLabels = showsHourLabels
+        self.showsNowHand = showsNowHand
     }
 
     var body: some View {
@@ -32,7 +45,9 @@ struct TimelinePieChart: View {
                 Canvas { context, _ in
                     draw(in: &context, frame: frame)
                 }
-                hourLabels(in: frame)
+                if showsHourLabels {
+                    hourLabels(in: frame)
+                }
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -79,7 +94,7 @@ struct TimelinePieChart: View {
         }
 
         // 時計の針: 現在時刻のマーク (today のみ)
-        if calendar.isDate(now, inSameDayAs: day) {
+        if showsNowHand, calendar.isDate(now, inSameDayAs: day) {
             let frac = now.timeIntervalSince(dayStart) / 86400.0
             let deg = frac * 360.0 - 90.0
             let radians = deg * .pi / 180.0
