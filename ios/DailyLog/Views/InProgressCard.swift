@@ -5,7 +5,6 @@ struct InProgressCard: View {
     let onStop: () -> Void
 
     @State private var now: Date = .init()
-    @State private var isPresentingVoiceMemo = false
     @State private var isPresentingMeal = false
 
     private let timer = Timer
@@ -27,11 +26,6 @@ struct InProgressCard: View {
                 .fill(Color(.secondarySystemBackground))
         )
         .onReceive(timer) { now = $0 }
-        .sheet(isPresented: $isPresentingVoiceMemo) {
-            if let activity {
-                VoiceMemoSheet(activity: activity)
-            }
-        }
         .sheet(isPresented: $isPresentingMeal) {
             if let activity {
                 MealDetailView(activity: activity)
@@ -61,8 +55,6 @@ struct InProgressCard: View {
                 mealButton
             }
 
-            micButton
-
             stopButton
         }
     }
@@ -77,18 +69,6 @@ struct InProgressCard: View {
         }
         .buttonStyle(.bordered)
         .accessibilityLabel("食事の記録")
-    }
-
-    private var micButton: some View {
-        Button {
-            isPresentingVoiceMemo = true
-        } label: {
-            Image(systemName: "mic")
-                .font(.title3)
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.bordered)
-        .accessibilityLabel("音声メモ")
     }
 
     private var stopButton: some View {

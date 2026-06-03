@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct VoiceMemoSheet: View {
-    let activity: Activity
+    /// 認識テキストの追記先 (呼び出し側でメモへ追記する)。
+    let onAppend: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var recognizer = SpeechRecognitionService()
@@ -150,8 +151,7 @@ struct VoiceMemoSheet: View {
 
     private func save() {
         recognizer.stopRecording()
-        activity.appendNote(recognizer.transcription)
-        try? activity.modelContext?.save()
+        onAppend(recognizer.transcription)
         dismiss()
     }
 }

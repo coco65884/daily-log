@@ -10,6 +10,7 @@ struct DailyMemoCard: View {
 
     @State private var draft: String = ""
     @State private var loadedDayKey: String?
+    @State private var isPresentingVoiceMemo = false
     @FocusState private var isFocused: Bool
 
     private let calendar: Calendar = .currentGregorian
@@ -24,7 +25,7 @@ struct DailyMemoCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
                 Label("今日のメモ", systemImage: "note.text")
                     .font(.subheadline.bold())
                     .foregroundStyle(.secondary)
@@ -35,6 +36,13 @@ struct DailyMemoCard: View {
                     }
                     .font(.caption)
                 }
+                Button {
+                    isPresentingVoiceMemo = true
+                } label: {
+                    Image(systemName: "mic")
+                        .font(.subheadline)
+                }
+                .accessibilityLabel("音声メモ")
             }
 
             ZStack(alignment: .topLeading) {
@@ -61,6 +69,16 @@ struct DailyMemoCard: View {
         .onChange(of: draft) { _, newValue in
             save(text: newValue)
         }
+        .sheet(isPresented: $isPresentingVoiceMemo) {
+            VoiceMemoSheet(onAppend: appendTranscription)
+        }
+    }
+
+    /// 音声認識テキストを今日のメモ末尾へ追記する。空文字列は無視。
+    private func appendTranscription(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        draft = draft.isEmpty ? trimmed : draft + "\n" + trimmed
     }
 
     private func loadIfNeeded() {
