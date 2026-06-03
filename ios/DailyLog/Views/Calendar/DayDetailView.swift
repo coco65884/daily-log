@@ -10,6 +10,7 @@ struct DayDetailView: View {
     private var allActivities: [Activity]
 
     @State private var chartMode: ChartMode = .timeline
+    @State private var isEditing = false
 
     enum ChartMode: String, CaseIterable, Identifiable {
         case timeline
@@ -75,6 +76,15 @@ struct DayDetailView: View {
         }
         .navigationTitle(titleText)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("修正") { isEditing = true }
+                    .disabled(activities.isEmpty)
+            }
+        }
+        .sheet(isPresented: $isEditing) {
+            DayEditView(date: date)
+        }
     }
 
     private var titleText: String {
