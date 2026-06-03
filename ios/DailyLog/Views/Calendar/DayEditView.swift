@@ -21,6 +21,9 @@ struct DayEditView: View {
     @State private var excludedCount = 0
     @State private var showDeleteConfirm = false
     @State private var didPopulate = false
+    /// ドラッグ開始時のレイアウト (ドラッグ中はここを基準に毎回再解決する)。
+    @State private var dragBaseline: [EditableSegment]?
+    @State private var dragDeletedIDs: [UUID] = []
 
     private let calendar: Calendar = .currentGregorian
     private let now: Date = .init()
@@ -33,8 +36,15 @@ struct DayEditView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    TimelineEditorDonut(segments: segments, dayStart: dayStart, selectedID: $selectedID)
-                        .frame(height: 220)
+                    TimelineEditorDonut(
+                        segments: segments,
+                        dayStart: dayStart,
+                        selectedID: $selectedID,
+                        onBeginDrag: beginDrag,
+                        onDragBoundary: dragBoundary,
+                        onEndDrag: endDrag
+                    )
+                    .frame(height: 220)
 
                     if excludedCount > 0 {
                         Text("日をまたぐ / 進行中の記録は修正対象外です")
@@ -111,6 +121,38 @@ struct DayEditView: View {
 
     private func clamp(_ date: Date, lower: Date, upper: Date) -> Date {
         min(max(date, lower), upper)
+    }
+
+    // MARK: - ドーナツ境界ドラッグ
+
+    private func beginDrag() {
+        dragBaseline = segments
+        dragDeletedIDs = []
+    }
+
+    private func dragBoundary(_ id: UUID, isStart: Bool, newTime: Date) {
+        guard let baseline = dragBaseline, let current = baseline.first(where: { $0.id == id }) else { return }
+        let dayEnd = dayStart.addingTimeInterval(86400)
+        let clamped = clamp(newTime, lower: dayStart, upper: dayEnd)
+        let newStart = isStart ? clamped : current.start
+        let newEnd = isStart ? current.end : clamped
+        guard newEnd.timeIntervalSince(newStart) >= 60 else { return }
+
+        let result = ActivityOverlapResolver.apply(editedID: id, newStart: newStart, newEnd: newEnd, to: baseline)
+        dragDeletedIDs = result.deletedIDs
+        selectedID = id
+        segments = result.updated
+    }
+
+    private func endDrag() {
+        guard let baseline = dragBaseline else { return }
+        for deletedID in dragDeletedIDs {
+            if let deleted = baseline.first(where: { $0.id == deletedID }) {
+                pendingDeleted.append(deleted)
+            }
+        }
+        dragBaseline = nil
+        dragDeletedIDs = []
     }
 
     // MARK: - Persistence
