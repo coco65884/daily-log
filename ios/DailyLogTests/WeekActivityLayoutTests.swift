@@ -21,6 +21,22 @@ final class WeekActivityLayoutTests: XCTestCase {
         XCTAssertEqual(span.weekdayIndex, 3) // Sun=0, ..., Wed=3
         XCTAssertEqual(span.startHours, 14, accuracy: 0.001)
         XCTAssertEqual(span.endHours, 16.5, accuracy: 0.001)
+        XCTAssertEqual(span.startDate, date(2026, 4, 22, 14, 0))
+        XCTAssertEqual(span.endDate, date(2026, 4, 22, 16, 30))
+    }
+
+    func testMidnightSplitChunkDatesAreClippedToEachDay() {
+        let weekStart = sunday(2026, 4, 19)
+        // Monday 22:00 -> Tuesday 01:00
+        let activity = makeActivity(start: date(2026, 4, 20, 22, 0), duration: 3 * 3600)
+
+        let spans = WeekActivityLayout.spans(for: [activity], weekStart: weekStart, calendar: calendar)
+
+        XCTAssertEqual(spans.count, 2)
+        XCTAssertEqual(spans[0].startDate, date(2026, 4, 20, 22, 0))
+        XCTAssertEqual(spans[0].endDate, date(2026, 4, 21, 0, 0))
+        XCTAssertEqual(spans[1].startDate, date(2026, 4, 21, 0, 0))
+        XCTAssertEqual(spans[1].endDate, date(2026, 4, 21, 1, 0))
     }
 
     func testActivitySpanningMidnightSplitsAcrossDays() {

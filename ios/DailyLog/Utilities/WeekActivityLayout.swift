@@ -10,6 +10,8 @@ enum WeekActivityLayout {
         let endHours: Double // startHours < endHours ≤ 24.0
         let colorHex: String
         let templateName: String
+        let startDate: Date // このチャンクの実開始時刻
+        let endDate: Date // このチャンクの実終了時刻
     }
 
     /// 指定週内の Activity を Span 配列に変換する。
@@ -58,7 +60,9 @@ enum WeekActivityLayout {
                         startHours: startHours,
                         endHours: endHours,
                         colorHex: activity.template?.colorHex ?? "#7F8C8D",
-                        templateName: activity.template?.name ?? "—"
+                        templateName: activity.template?.name ?? "—",
+                        startDate: cursor,
+                        endDate: chunkEnd
                     )
                 )
 
