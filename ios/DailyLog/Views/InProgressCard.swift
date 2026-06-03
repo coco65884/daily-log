@@ -47,10 +47,12 @@ struct InProgressCard: View {
                 Text(activity.template?.name ?? "（テンプレートなし）")
                     .font(.headline)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 Text(DurationFormatter.elapsed(from: activity.startAt, to: now))
                     .font(.system(.title3, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
