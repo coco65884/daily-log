@@ -106,6 +106,7 @@ struct DayDetailView: View {
                             editingActivity = activity
                         } label: {
                             DayActivityRow(activity: activity)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
