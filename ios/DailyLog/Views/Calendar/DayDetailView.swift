@@ -11,6 +11,7 @@ struct DayDetailView: View {
 
     @State private var chartMode: ChartMode = .timeline
     @State private var isEditing = false
+    @State private var editingActivity: Activity?
 
     private let calendar: Calendar = .currentGregorian
 
@@ -101,7 +102,12 @@ struct DayDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(activities) { activity in
-                        DayActivityRow(activity: activity)
+                        Button {
+                            editingActivity = activity
+                        } label: {
+                            DayActivityRow(activity: activity)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -116,6 +122,9 @@ struct DayDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             DayEditView(date: date)
+        }
+        .sheet(item: $editingActivity) { activity in
+            ActivityEditSheet(activity: activity, dayActivities: activities, calendar: calendar)
         }
     }
 
