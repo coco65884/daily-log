@@ -12,6 +12,8 @@ struct DayDetailView: View {
     @State private var chartMode: ChartMode = .timeline
     @State private var isEditing = false
 
+    private let calendar: Calendar = .currentGregorian
+
     enum ChartMode: String, CaseIterable, Identifiable {
         case timeline
         case proportion
@@ -36,6 +38,36 @@ struct DayDetailView: View {
         DayActivitySummary.slices(for: allActivities, on: date)
     }
 
+    private var dayStart: Date {
+        calendar.startOfDay(for: date)
+    }
+
+    /// 時系列ドーナツ用に、その日の各 Activity を当日内にクリップしたセグメント列。
+    private var daySegments: [EditableSegment] {
+        let dayEnd = dayStart.addingTimeInterval(86400)
+        let now = Date()
+        return activities.compactMap { activity in
+            let start = max(activity.startAt, dayStart)
+            let end = min(activity.endAt ?? now, dayEnd)
+            guard end > start else { return nil }
+            return EditableSegment(
+                id: activity.id,
+                start: start,
+                end: end,
+                templateName: activity.template?.name ?? "（未分類）",
+                colorHex: displayHex(for: activity.template)
+            )
+        }
+    }
+
+    private func displayHex(for template: ActivityTemplate?) -> String {
+        guard let template else { return "#7F8C8D" }
+        guard let parent = template.parent else { return template.colorHex }
+        let siblings = parent.children.sorted { $0.sortOrder < $1.sortOrder }
+        let index = siblings.firstIndex { $0.id == template.id } ?? 0
+        return HexColor.shaded(parentHex: parent.colorHex, childIndex: index)
+    }
+
     var body: some View {
         List {
             Section("サマリー") {
@@ -56,7 +88,7 @@ struct DayDetailView: View {
                     case .proportion:
                         DayPieChart(slices: slices)
                     case .timeline:
-                        TimelinePieChart(day: date, activities: activities)
+                        DayTimelineDonut(segments: daySegments, dayStart: dayStart)
                             .frame(height: 260)
                     }
                 }
